@@ -1,5 +1,6 @@
 import discord
 import os
+from discord.ext import commands
 from replit import db
 
 intents = discord.Intents.all()
@@ -12,14 +13,25 @@ def count_message():
 	db["messages"] = messages # Store new value
 	print('Messages processed: {}'.format(messages)) # Console log
 
+def count_members():
+	"""Counts total members processed. Called on every on_member_joined()"""
+	members = db["members"] # Always get previous value from DB
+	members += 1
+	db["members"] = members # Store new value
+	print('Members processed: {}'.format(members)) # Console log
+
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 
-client = discord.Client()
+client = commands.Bot(command_prefix = "!", intents = intents)
 
 @client.event
 async def on_member_join(member):
-	print('Someone new!')
-	await member.send("Welcome")
+	count_members()
+	print('{} joined the server'.format(member))
+	await member.send("Welcome. Please abide by the rules")
+	guild = member.guild
+	channel = guild.system_channel
+	await channel.send('Welcome {}'.format(member.name))
 
 @client.event
 async def on_ready(): # When ready
@@ -32,7 +44,7 @@ async def on_message(message): # On every message
 	if message.author == client.user: # Cancel own message
 		return
 
-	if message.content.startswith('?'):
-		await message.channel.send('Command')
+	if message.content.startswith('ping'):
+		await message.channel.send('pong')
 
 client.run(DISCORD_TOKEN)
