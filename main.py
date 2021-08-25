@@ -98,6 +98,8 @@ client = discord.Client(intents = intents)
 @client.event
 async def on_member_join(member):
 	count_members()
+	# TODO: Check against list of previously welcomed members
+	# TODO: Add !debug_remove_user to clear welcomed members for testing
 	print('{} joined the server'.format(member))
 	rules_dm = db["rules_dm"]
 	await member.send(rules_dm)
@@ -130,9 +132,10 @@ async def on_message(message): # On every message
 			role_str = str(role)
 			if role_str.find('BotManager') != -1:
 				bot_manager_role = True
-			else:
-				await message.author.send('Please don\'t use ! at the start of messages.')
-
+			
+		if bot_manager_role == False:
+			await message.author.send('Please don\'t use ! at the start of messages.')
+			return
 
 		if bot_manager_role == True: # Commands for the BotManagers
 			print('Command issued by BotManager {}'.format(message.author))
