@@ -1,3 +1,13 @@
+"""
+RastaBot developed by Trolan (Trevor Mathisen).
+
+This bot:
+1) Welcomes new members to the discord sever
+2) Has the ability to adjust welcome messages based on season
+3) TODO: Add roles to users based on their methods of grow
+4) TODO: Facilitate auctions and raffles
+
+"""
 import discord
 import os
 from replit import db
@@ -23,6 +33,9 @@ def count_members():
 def set_welcome_message_season(season):
 	"""Sets the season for the welcome message service"""
 	db["season"] = season
+	print('Season updated to {}'.format(season))
+	reply = 'Season updated to {}'.format(season)
+	return reply
 
 def new_welcome_message_season(season):
 	available_welcome_messages = db["welcome_message"]
@@ -36,33 +49,47 @@ def new_welcome_message_season(season):
 	
 def get_welcome_message_season():
 	"""Returns the current season from the replit db"""
+	print('get_welcome_message_season(): {}'.format(db["season"]))
 	return db["season"]
 
 def new_welcome_message(season, welcome_message):
 	"""Loads a new welcome message to the season list"""
 	available_welcome_messages = db["welcome_message"]
 	if season not in available_welcome_messages:
+		print('{} must be added as a season first.'.format(season))
 		return '{} must be added as a season first.'.format(season)
 
 	if available_welcome_messages[season] is None:
 		available_welcome_messages[season] = [welcome_message]
 		db["welcome_message"] = available_welcome_messages
+		print('{} created in {}'.format(welcome_message, season))
 		return '{} created in {}'.format(welcome_message, season)
 
 	available_welcome_messages[season].append(welcome_message)
 	db["welcome_message"] = available_welcome_messages
+	print('{} added to {}'.format(welcome_message, season))
 	return '{} added to {}'.format(welcome_message, season)
 
 def get_welcome_message(season):
 	"""Returns a random welcome message from the current season"""
 	seasonal_welcome_messages = db["welcome_message"][season]
 	size = len(seasonal_welcome_messages)
-	print('get_welcome_message.size| {}'.format(size))
 	random_index = random.randrange(0, size)
-	print('random_index| {}'.format(random_index))
 	reply = seasonal_welcome_messages[random_index]
 	print(reply)
 	return reply
+
+def update_rules_message(rules_message):
+	db["rules_message"] = rules_message
+	print(rules_message)
+	reply = 'Successfull changed rules message to {}'
+	return reply.format(rules_message)
+
+def update_rules_dm(rules_dm):
+	db["rules_dm"] = rules_dm
+	print('length of rules_dm: {}'.format(len(rules_dm)))
+	reply = 'Successfull changed rules dm to {}'
+	return reply.format(rules_dm)
 
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 
@@ -72,12 +99,15 @@ client = discord.Client(intents = intents)
 async def on_member_join(member):
 	count_members()
 	print('{} joined the server'.format(member))
-	await member.send("Welcome. Please abide by the rules")
+	rules_dm = db["rules_dm"]
+	await member.send(rules_dm)
 	guild = member.guild
 	channel = guild.system_channel
 	season = db["season"]
 	reply = get_welcome_message(season)
+	rules_message = db["rules_message"]
 	await channel.send(reply.format(member.name))
+	await channel.send(rules_message)
 
 @client.event
 async def on_ready(): # When ready
@@ -135,6 +165,17 @@ async def on_message(message): # On every message
 		print('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
 		await message.channel.send('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
 
+	if message.content.startswith('!update_rules_message'):
+		split_message = message.content.split()
+		new_rules_message = ' '.join(split_message[1:])
+		reply = update_rules_message(new_rules_message)
+		await message.channel.send(reply)
+
+	if message.content.startswith('!update_rules_dm'):
+		split_message = message.content.split()
+		new_rules_dm = ' '.join(split_message[1:])
+		reply = update_rules_dm(new_rules_dm)
+		await message.channel.send(reply)
 
 	if message.content.startswith('!keys'):
 		keys = db.keys()
