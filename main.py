@@ -122,64 +122,76 @@ async def on_message(message): # On every message
 
 	if message.content.startswith('ping'):
 		await message.channel.send('pong!')
-	
-	if message.content.startswith('!get_season'):
-		reply = get_welcome_message_season()
-		await message.channel.send(reply)
-	
-	if message.content.startswith('!set_season'):
-		split_message = message.content.split()
-		reply = set_welcome_message_season(split_message[1])
-		await message.channel.send(reply)
 
-	if message.content.startswith('!new_season'):
-		split_message = message.content.split()
-		updated_season = split_message[1] # !new_season [1]
-		reply = new_welcome_message_season(updated_season)
-		print(get_welcome_message_season(), '| {}'.format(reply))
-		await message.channel.send(reply)
+	if message.content.startswith('!'): # All commands for the bot
+		bot_manager_role = False # Assume nothing
 
-	if message.content.startswith('!new_welcome_message'):
-		split_message = message.content.split()
-		updated_welcome_message_season = split_message[1]
-		updated_welcome_message = split_message[2:]
-		updated_welcome_message = ' '.join(updated_welcome_message)
-		reply = new_welcome_message(updated_welcome_message_season, updated_welcome_message)
-		print(reply)
-		await message.channel.send(reply)
-	
-	if message.content.startswith('!list_welcome_messages'):
-		current_season = db["season"]
-		seasonal_welcome_messages = db["welcome_message"][current_season]
-		for i in range(len(seasonal_welcome_messages)):
-			await message.channel.send('{}: {}'.format(i, seasonal_welcome_messages[i]))
+		for role in message.author.roles: # Find if the user is a BotManager
+			role_str = str(role)
+			if role_str.find('BotManager') != -1:
+				bot_manager_role = True
+			else:
+				await message.author.send('Please don\'t use ! at the start of messages.')
 
-	if message.content.startswith('!delete_welcome_message'):
-		split_message = message.content.split()
-		index_to_delete = int(split_message[1])
-		current_season = db["season"]
-		seasonal_welcome_messages = db["welcome_message"][current_season]
-		deleted_welcome_message = seasonal_welcome_messages[index_to_delete]
-		del seasonal_welcome_messages[index_to_delete]
-		db["welcome_message"][current_season] = seasonal_welcome_messages
-		print('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
-		await message.channel.send('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
 
-	if message.content.startswith('!update_rules_message'):
-		split_message = message.content.split()
-		new_rules_message = ' '.join(split_message[1:])
-		reply = update_rules_message(new_rules_message)
-		await message.channel.send(reply)
+		if bot_manager_role == True: # Commands for the BotManagers
+			print('Command issued by BotManager {}'.format(message.author))
 
-	if message.content.startswith('!update_rules_dm'):
-		split_message = message.content.split()
-		new_rules_dm = ' '.join(split_message[1:])
-		reply = update_rules_dm(new_rules_dm)
-		await message.channel.send(reply)
+			if message.content.startswith('!get_season'):
+				reply = get_welcome_message_season()
+				await message.channel.send(reply)
+			
+			if message.content.startswith('!set_season'):
+				split_message = message.content.split()
+				reply = set_welcome_message_season(split_message[1])
+				await message.channel.send(reply)
 
-	if message.content.startswith('!keys'):
-		keys = db.keys()
-		print(keys)
+			if message.content.startswith('!new_season'):
+				split_message = message.content.split()
+				updated_season = split_message[1] # !new_season [1]
+				reply = new_welcome_message_season(updated_season)
+				print(get_welcome_message_season(), '| {}'.format(reply))
+				await message.channel.send(reply)
+
+			if message.content.startswith('!new_welcome_message'):
+				split_message = message.content.split()
+				updated_welcome_message_season = split_message[1]
+				updated_welcome_message = split_message[2:]
+				updated_welcome_message = ' '.join(updated_welcome_message)
+				reply = new_welcome_message(updated_welcome_message_season, updated_welcome_message)
+				print(reply)
+				await message.channel.send(reply)
+			
+			if message.content.startswith('!list_welcome_messages'):
+				current_season = db["season"]
+				seasonal_welcome_messages = db["welcome_message"][current_season]
+				for i in range(len(seasonal_welcome_messages)):
+					await message.channel.send('{}: {}'.format(i, seasonal_welcome_messages[i]))
+
+			if message.content.startswith('!delete_welcome_message'):
+				split_message = message.content.split()
+				index_to_delete = int(split_message[1])
+				current_season = db["season"]
+				seasonal_welcome_messages = db["welcome_message"][current_season]
+				deleted_welcome_message = seasonal_welcome_messages[index_to_delete]
+				del seasonal_welcome_messages[index_to_delete]
+				db["welcome_message"][current_season] = seasonal_welcome_messages
+				print('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
+				await message.channel.send('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
+
+			if message.content.startswith('!update_rules_message'):
+				new_rules_message = message.content[21:]
+				reply = update_rules_message(new_rules_message)
+				await message.channel.send(reply)
+
+			if message.content.startswith('!update_rules_dm'):
+				new_rules_dm = message.content[16:]
+				reply = update_rules_dm(new_rules_dm)
+				await message.channel.send(reply)
+
+			if message.content.startswith('!keys'):
+				keys = db.keys()
+				print(keys)
 
 
 client.run(DISCORD_TOKEN)
