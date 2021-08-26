@@ -1,5 +1,4 @@
-import discord
-import os
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -8,6 +7,8 @@ COMMAND_PREFIX = '!'
 about = 'RastaBot is created by Trolan for use on the Irie Army Discord.\nRastaBot is developed in python using the discord.py library.\nYou can find more information about RastaBot at https://github.com/Trolann/RastaBot\n'
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 client = discord.Client(intents = intents)
+
+irie_vet_role = discord.Guild.get_role(role_id = 880475302420152351)
 
 requests = {
 	'help':'This request sends a DM containing all possible requests from a user',
