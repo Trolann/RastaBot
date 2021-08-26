@@ -6,15 +6,18 @@ This bot:
 2) Has the ability to adjust welcome messages based on season
 3) TODO: Add roles to users based on their methods of grow
 4) TODO: Facilitate auctions and raffles
-
+TODO: Mas comments 
 """
-import discord
-import os
+#import discord
 from replit import db
 import random
+import rastabot_config
 
-intents = discord.Intents.default()
-intents.members = True
+intents = rastabot_config.intents
+REQUEST_PREFIX, COMMAND_PREFIX = rastabot_config.REQUEST_PREFIX, rastabot_config.COMMAND_PREFIX
+about = rastabot_config.about
+DISCORD_TOKEN = rastabot_config.DISCORD_TOKEN
+client = rastabot_config.client
 
 def count_message():
 	"""Counts total messages processed. Called on every on_message()"""
@@ -91,9 +94,15 @@ def update_rules_dm(rules_dm):
 	reply = 'Successfull changed rules dm to {}'
 	return reply.format(rules_dm)
 
-DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
-
-client = discord.Client(intents = intents)
+async def help_request(member):
+	print('Help request from {}'.format(member.name))
+	await member.send('Hi {}, I\'m RastaBot. How can I help?'.format(member.name))
+	requests_list = db["requests_list"]
+	dm_contents = ''
+	for req in requests_list:
+		desc = requests_list[req]
+		dm_contents += '{rp}{r}: {d}\n'.format(rp = REQUEST_PREFIX, r = req, d = desc)
+	await member.send(dm_contents)
 
 @client.event
 async def on_member_join(member):
@@ -124,6 +133,15 @@ async def on_message(message): # On every message
 
 	if message.content.startswith('ping'):
 		await message.channel.send('pong!')
+
+	if message.content.startswith(REQUEST_PREFIX):
+		if message.content.startswith('{}help'.format(REQUEST_PREFIX)):
+			await message.channel.send('{}, check your DM\'s for help.'.format(message.author.name))
+			await help_request(message.author)
+
+		if message.content.startswith('{}about'.format(REQUEST_PREFIX)):
+			print('{}about request recieved from {}'.format(REQUEST_PREFIX, message.author))
+			await message.author.send(about)
 
 	if message.content.startswith('!'): # All commands for the bot
 		bot_manager_role = False # Assume nothing
