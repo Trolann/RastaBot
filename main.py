@@ -16,7 +16,6 @@ COMMAND_PREFIX = '!' # Prefix for managers to command the bot
 about = db["about"] # Longwinded info about this bot
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 client = discord.Client(intents = intents)
-role_vet_id = 880475302420152351
 role_army_id = 880475456841871401
 requests_avail = {
 	'help':'This request sends a DM containing all possible requests from a user',
@@ -109,15 +108,20 @@ async def on_member_join(member):
 	# TODO: Check against list of previously welcomed members
 	# TODO: Add !debug_remove_user to clear welcomed members for testing
 	print('{} joined the server'.format(member))
-	rules_dm = db["rules_dm"]
-	await member.send(rules_dm)
-	guild = member.guild
-	channel = guild.system_channel
-	season = db["season"]
-	reply = get_welcome_message(season)
-	rules_message = db["rules_message"]
-	await channel.send(reply.format(member.name))
-	await channel.send(rules_message)
+	welcomed_members = db["welcomed_members"]
+	if int(member.id) in welcomed_members:
+		return
+	else:
+		rules_dm = db["rules_dm"]
+		await member.send(rules_dm)
+		guild = member.guild
+		channel = guild.system_channel
+		season = db["season"]
+		reply = get_welcome_message(season)
+		#rules_message = db["rules_message"]
+		welcomed_members.append(int(member.id))
+		await channel.send(reply.format(member.name))
+		#await channel.send(rules_message) #Only send one message for now
 
 @client.event
 async def on_ready(): # When ready
@@ -126,46 +130,34 @@ async def on_ready(): # When ready
 @client.event
 async def on_raw_reaction_add(payload):
 	count.reactions()
-	if payload.message_id == 880475873961185350:
+	role_reaction_id = db["role_reaction_message"]
+	if payload.message_id == int(role_reaction_id):
 		print('Role Reaction received from {}'.format(payload.member))
 		
-		if str(payload.emoji) == '1️⃣':
+		if str(payload.emoji) == '✅':
 			print('Received {}army_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
 			irie_guild = payload.member.guild
 			irie_army_role = irie_guild.get_role(role_army_id)
 			await payload.member.add_roles(irie_army_role)
 			print(payload.member.roles)
 
-		if str(payload.emoji) == '2️⃣':
-			print('Received {}veteran reaction from {}'.format(REQUEST_PREFIX, payload.member))
-			irie_guild = payload.member.guild
-			irie_vet_role = irie_guild.get_role(role_vet_id)
-			await payload.member.add_roles(irie_vet_role)
-			print(payload.member.roles)			
-
 @client.event
 async def on_raw_reaction_remove(payload):
 	count.reactions()
-	if payload.message_id == 880475873961185350:
+	role_reaction_id = db["role_reaction_message"]
+	if payload.message_id == role_reaction_id:
 		split_payload = str(payload).split()
 		user_id = split_payload[2][8:]
 		irie_guild = client.get_guild(879408430283128843)
 		member = irie_guild.get_member(int(user_id))
 		print('Role Reaction removal received from {}'.format(member))
 
-		if str(payload.emoji) == '1️⃣':
+		if str(payload.emoji) == '✅':
 			print('Received {}army_role removal reaction from {}'.format(REQUEST_PREFIX, member))
 			irie_army_role = irie_guild.get_role(role_army_id)
 			await member.remove_roles(irie_army_role)
 			print(member.roles)
 
-		if str(payload.emoji) == '2️⃣':
-			print('Received {}veteran removal reaction from {}'.format(REQUEST_PREFIX, member))
-			irie_vet_role = irie_guild.get_role(role_vet_id)
-			await member.remove_roles(irie_vet_role)
-			print(member.roles)	
-
-		
 @client.event
 async def on_message(message): # On every message
 	count.message() # Count it
@@ -281,5 +273,16 @@ async def on_message(message): # On every message
 			if message.content.startswith('{}keys'.format(COMMAND_PREFIX)):
 				keys = db.keys()
 				print(keys)
+
+			if message.content.startswith('{}clear_welcomed_members'.format(COMMAND_PREFIX)):
+				welcomed_members = ['']
+				db["welcomed_members"] = welcomed_members
+				await message.channel.send('Done')
+			
+			if message.content.startswith('{}new_role_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["role_reaction_message"] = int(new_message_id)
+				await message.channel.send('Done')
 
 client.run(DISCORD_TOKEN)
