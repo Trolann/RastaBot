@@ -30,7 +30,12 @@ commands_avail = {
 	'new_role_message_id [id]': 'Sets which message the bot should monitor for the @Irie Army role reaction',
 	'new_rules_message_id [id]': 'Sets which message the bot should copy when sending the rules',
 	'new_actions_message_id [id]': 'Sets which message the bot should copy when sending the actions/waffle rules',
-	'new_links_message_id [id]': 'Sets which message the bot should copy when sending links.'
+	'new_links_message_id [id]': 'Sets which message the bot should copy when sending links.',
+	'db_update [db_key] [db_value]': 'Put a key:value pair in the db manually',
+	'db_delete [db_ley]': 'Delete a key entirely from the db. Requires confirmation in the console (Trolan)',
+	'add_bad_word [bad word or phrase]': 'Adds a new bad word or phrase to the list',
+	'list_bad_words': 'Lists all current bad words',
+	'delete_bad_word [bad word or phrase]': 'Deletes a bad word or phrase from the list'
 }
 
 db["commands_list"] = commands_avail

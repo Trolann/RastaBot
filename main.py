@@ -15,17 +15,51 @@ COMMAND_PREFIX = '!' # Prefix for managers to command the bot
 about = db["about"] # Longwinded info about this bot
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 client = discord.Client(intents = intents)
-role_army_id = int(os.environ['ROLE_ARMY_ID'])
-role_actions_id = int(os.environ['ROLE_ACTIONS_ID'])
-soil_grow_id = int(os.environ['SOIL_GROW_ID'])
-hydro_grow_id = int(os.environ['HYDRO_GROW_ID'])
-coco_grow_id = int(os.environ['COCO_GROW_ID'])
-rules_channel_id = int(os.environ['RULES_CHANNEL_ID'])
-actions_rules_channel_id = int(os.environ['ACTIONS_RULES_CHANNEL_ID'])
-links_channel_id = int(os.environ['LINKS_CHANNEL_ID'])
+role_army_id = int(os.environ['ROLE_ARMY_ID']) # Role ID: @Irie Army
+role_actions_id = int(os.environ['ROLE_ACTIONS_ID']) # Role ID: @Actions
+soil_grow_id = int(os.environ['SOIL_GROW_ID']) # Role ID: @Soil
+hydro_grow_id = int(os.environ['HYDRO_GROW_ID']) # Role ID: @Soilless
+coco_grow_id = int(os.environ['COCO_GROW_ID']) # Role ID: @Coco
+rules_channel_id = int(os.environ['RULES_CHANNEL_ID']) # Channel ID: #rules_and_etiquiette
+actions_rules_channel_id = int(os.environ['ACTIONS_RULES_CHANNEL_ID']) # Channel ID: #how-to-play
+links_channel_id = int(os.environ['LINKS_CHANNEL_ID']) # Channel ID: #irie-genetics-links
 action_rules = ''
 
+
+#*****************************************************#
+#  Function Group: Database Update Functions          #
+#  Description: Functions to manually add keys and    #
+#               values to the database. Used for      #
+#               intiial setup on a new sever          #
+#       Contains: command_db_update(key, value)       #
+#                 command_db_delete(key)              #
+#*****************************************************#
+def command_db_update(key, value):
+	"""Manual DB update processing. """
+	db[key] = value
+	return ('Added {}:{}'.format(key, value))
+
+def command_db_delete(key):
+	"""Manual DB key:value delete processing. Console confirmationr """
+	response = input('Are you sure you want to delete {}?'.format(key)).lower()
+	if response in ('yes', 'y'):
+		del db[key]
+		print('Delete {}'.format(key))
+		return 'Deleted {}'.format(key)
+	else:
+		print('Negative response received. Did not delete {}'.format(key))
+		return 'Negative response received. Did not delete {}'.format(key)
+
+#*****************************************************#
+#  Function Group: Database Update Functions          #
+#  Description: Functions to manually add keys and    #
+#               values to the database. Used for      #
+#               intiial setup on a new sever          #
+#       Contains: command_db_update(key, value)       #
+#                 command_db_delete(key)              #
+#*****************************************************#
 async def help_request(channel, member):
+	"""Retrieve all requests and send formatted message to channel"""
 	print('Help request from {}'.format(member.name))
 	await channel.send('Hi {}, I\'m RastaBot. How can I help?'.format(member.mention))
 	requests_list = db["requests_list"]
@@ -36,7 +70,8 @@ async def help_request(channel, member):
 	await channel.send(msg_contents)
 
 async def commands_help_request(channel, member):
-	print('Commands request from {}'.format(member.name))
+	"""Retrieve all commands and send formatted message to channel"""
+	print('Commands help request from {}'.format(member.name))
 	await channel.send('RastaBot commands available for {}'.format(member.mention))
 	commands_list = db["commands_list"]
 	msg_contents = ''
@@ -46,6 +81,7 @@ async def commands_help_request(channel, member):
 	await channel.send(msg_contents)
 
 def get_about():
+	"""Return about information (TODO)"""
 	print('TODO: get_about()')
 	return about
 
@@ -105,6 +141,20 @@ def get_welcome_message(season):
 	print(reply)
 	return reply
 
+#*****************************************************#
+#  Function Group: Welcome messages                   #
+#  Description: Functions related to setting          #
+#               getting or deleting welcome messages  #
+#               rules messages and dm's and the       #
+#               associated season                     #
+#  Contains: set_welcome_message_season(season)       #
+#            new_welcome_message(season)              #
+#            get_welcome_message_season()             #
+#         new_welcome_message(season, welcome_message)#
+#            get_welcome_message(season)              #
+#            update_rules_message(rules_message)      #
+#            update_rules_dm(rules_dm)                #
+#*****************************************************#
 def update_rules_message(rules_message):
 	"""Updates built in rules_message posted in system_channel after welcome_message"""
 	db["rules_message"] = rules_message
@@ -119,6 +169,66 @@ def update_rules_dm(rules_dm):
 	reply = 'Successfull changed rules dm to {}'
 	return reply.format(rules_dm)
 
+#*****************************************************#
+#  Function Group: Bad words                          #
+#  Description: Functions which process bad words     #
+#  Contains: list_bad_words(channel)                  #
+#            bad_words_check(message)                 #
+#*****************************************************#
+def sort_bad_words():
+	"""Sorts list of bad words alphabetically and puts back in db"""
+	bad_words_list = db["bad_word_list"]
+	sorted_list = [ ] 
+	for word in bad_words_list:
+		sorted_list.append(word)
+	sorted_list.sort()
+	db["bad_word_list"] = sorted_list
+
+async def list_bad_words(channel):
+	"""Send a list of bad words to a channel"""
+	reply = ''
+	sort_bad_words()
+	bad_words_list = db["bad_word_list"]
+	for word in bad_words_list:
+		reply += '{}, '.format(word)
+	await channel.send(reply)
+
+def bad_words_check(message):
+	words_said = '' # Blank reply
+	bad_word_check = db["bad_word_list"]
+	for word in bad_word_check: # For every bad word we have
+		if word in message.clean_content.lower(): # See if its in the message
+			if words_said == '': # If it's the first word found, add it
+				words_said += word
+			else:
+				words_said += ' or {}'.format(word) # or add to list if its not
+	word_count = words_said.count(' or')
+
+	if word_count != 1:
+		words_said = words_said.replace(' or', ',', word_count - 1)
+	
+	return words_said # Send back {}, {} or {} of bad words
+
+#*****************************************************#
+#                      On ready:                      #
+#                    Basic actions                    #
+#                      Process:                       #
+#      - Prints to console when ready                 #
+#*****************************************************#
+@client.event
+async def on_ready(): # When ready
+	print('We have logged in as {0.user}'.format(client))
+
+#*****************************************************#
+#               Member Join Processing:               #
+#        Processes a new member to the server         #
+#                      Process:                       #
+#      - Counts every member                          #
+#      - Checks if member was welcomed before         #
+#      - Gets a welcome message based on season       #
+#      - Adds welcomed member to welcomed list        #
+#      - Sends the welcome message                    #
+#*****************************************************#
 @client.event
 async def on_member_join(member):
 	count.members()
@@ -140,10 +250,15 @@ async def on_member_join(member):
 		await channel.send(reply.format(member.mention, REQUEST_PREFIX))
 		#await channel.send(rules_message) #Only send one message for now
 
-@client.event
-async def on_ready(): # When ready
-	print('We have logged in as {0.user}'.format(client))
-
+#*****************************************************#
+#              Reaction Add Processing:               #
+#            Reaction adds processed here             #
+#                      Process:                       #
+#     - Count every reaction                          #
+#     - Loads reaction message from db                #
+#     - Adds role based on reaction                   #
+#     - TODO: Base roles on list (needs commands)     #
+#*****************************************************#
 @client.event
 async def on_raw_reaction_add(payload):
 	count.reactions()
@@ -194,6 +309,17 @@ async def on_raw_reaction_add(payload):
 			await payload.member.add_roles(coco_role)
 			print(payload.member.roles)
 
+#*****************************************************#
+#            Reaction Removal Processing:             #
+#          Reaction removals processed here           #
+#                      Process:                       #
+#     - Count every reaction                          #
+#     - Loads guild object                            #
+#     - Strips user_id from payload                   #
+#     - Loads member from user_id and guild           #
+#     - Loads reaction message from db                #
+#     - Removes role based on reaction                #
+#*****************************************************#
 @client.event
 async def on_raw_reaction_remove(payload):
 	count.reactions()
@@ -250,6 +376,22 @@ async def on_raw_reaction_remove(payload):
 			print(member.roles)
 
 
+#*****************************************************#
+#                 Message Processing:                 #
+#     Channel and Private messages processed here     #
+#                      Process:                       #
+#     - Count every message                           #
+#     - Don't process the bot's own message           #
+#     - Tell DM senders DM's aren't supported         #
+#     - Process ping/pong checks                      #
+#     - Check if the user is a BotManager             #
+#     - Run message through bad word detector         #
+#                       (if not a bot manager         #
+#     - Then the message is processed                 #
+#           - Requests: Require @IrieArmy role        #
+#           - Commands: Require @BotManager role      #
+#*****************************************************#
+
 
 @client.event
 async def on_message(message): # On every message
@@ -265,13 +407,18 @@ async def on_message(message): # On every message
 	if message.content.startswith('ping') or message.content.startswith('Ping'): # Simple test the bot is working
 		await message.channel.send('pong!')
 
-	if 'auction' in message.clean_content.lower():
-		await message.channel.send('Hey {}, watch your mouth. We don\'t do auctions around here'.format(message.author.mention))
-		return
+	bot_manager_role = False # Assume nothing
 
-	if 'raffle' in message.clean_content.lower():
-		await message.channel.send('Hey {}, watch your mouth. We don\'t do raffles around here'.format(message.author.mention))
-		return
+	for role in message.author.roles: # Find if the user is a BotManager
+		role_str = str(role)
+		if role_str.find('BotManager') != -1:
+			bot_manager_role = True
+
+	if not message.content.startswith('{}'.format(COMMAND_PREFIX)) and bot_manager_role == True: 
+		bad_words_in_message = bad_words_check(message)
+		if bad_words_in_message != '':
+			await message.channel.send('Hey {}, watch your mouth. We don\'t mention {} around here.'.format(message.author.mention, bad_words_in_message))
+			return
 
 	if message.content.startswith(REQUEST_PREFIX): # Route Requests
 		irie_army_role = False # Assume nothing
@@ -322,14 +469,7 @@ async def on_message(message): # On every message
 				await member.send(links_msg.content)
 				await message.channel.send('{}, I sent you a copy of the links from {}. Let us know if something should be added!'.format(member.mention, links_channel.mention))
 
-	if message.content.startswith(COMMAND_PREFIX): # All commands for the bot
-		bot_manager_role = False # Assume nothing
-
-		for role in message.author.roles: # Find if the user is a BotManager
-			role_str = str(role)
-			if role_str.find('BotManager') != -1:
-				bot_manager_role = True
-			
+	if message.content.startswith(COMMAND_PREFIX): # All commands for the bot			
 		if bot_manager_role == False:
 			await message.author.send('Please don\'t use {} at the start of messages.'.format(COMMAND_PREFIX))
 			return
@@ -397,6 +537,7 @@ async def on_message(message): # On every message
 			if message.content.startswith('{}keys'.format(COMMAND_PREFIX)):
 				keys = db.keys()
 				print(keys)
+				await message.channel.send(keys)
 
 			if message.content.startswith('{}clear_welcomed_members'.format(COMMAND_PREFIX)):
 				welcomed_members = ['']
@@ -438,5 +579,36 @@ async def on_message(message): # On every message
 				new_message_id = int(split_message[1])
 				db["links_message_id"] = int(new_message_id)
 				await message.channel.send('Done')
+
+			if message.content.startswith('{}db_update'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				db_key = split_message[1]
+				db_value = split_message[2]
+				reply = command_db_update(db_key, db_value)
+				await message.channel.send(reply)
+
+			if message.content.startswith('{}db_delete'.format(COMMAND_PREFIX)):
+				db_key = message.content[11:]
+				reply = command_db_delete(db_key)
+				await message.channel.send(reply)
+
+			if message.content.startswith('{}add_bad_word'.format(COMMAND_PREFIX)):
+				bad_word_list = db["bad_word_list"]
+				bad_word_list.append(message.clean_content[14:])
+				db["bad_word_list"] = bad_word_list
+				sort_bad_words()
+				await message.channel.send('Added {} to bad_word_list'.format(bad_word_list[-1]))
+
+			if message.content.startswith('{}list_bad_words'.format(COMMAND_PREFIX)):
+				await list_bad_words(message.channel)
+
+			if message.content.startswith('{}delete_bad_word'.format(COMMAND_PREFIX)):
+				to_delete = message.clean_content[17:]
+				bad_word_list = db["bad_word_list"]
+				bad_word_list.remove(to_delete)
+				db["bad_word_list"] = bad_word_list
+				await message.channel.send('Deleted {} from the list'.format(to_delete))
+				await list_bad_words(message.channel)
+				
 
 client.run(DISCORD_TOKEN)
