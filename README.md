@@ -28,4 +28,4 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     
 >This bot is free to the Irie Army but does have a low cloud operating cost. If you want to help me out, or buy me a beer: 
 >  
->[<img src="images/bmc-button.svg" width="150"/>](https://www.buymeacoffee.com/trolan)
+>[<img src="https://img.buymeacoffee.com/api/?url=aHR0cHM6Ly9pbWcuYnV5bWVhY29mZmVlLmNvbS9hcGkvP25hbWU9VHJldm9yK01hdGhpc2VuJnNpemU9MzAwJmJnLWltYWdlPWJtYyZiYWNrZ3JvdW5kPUZGODEzRg==&creator=Trevor+Mathisen&is_creating=building%20more%20code%20every%20day&design_code=1&design_color=%23FF813F&slug=trolan" width="150"/>](https://www.buymeacoffee.com/trolan)
