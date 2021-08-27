@@ -42,6 +42,7 @@ def command_db_update(key, value):
 def command_db_delete(key):
 	"""Manual DB key:value delete processing. Console confirmationr """
 	response = input('Are you sure you want to delete {}?'.format(key)).lower()
+	# This response/input is required in the console, an extra layer of security
 	if response in ('yes', 'y'):
 		del db[key]
 		print('Delete {}'.format(key))
@@ -62,10 +63,11 @@ async def help_request(channel, member):
 	"""Retrieve all requests and send formatted message to channel"""
 	print('Help request from {}'.format(member.name))
 	await channel.send('Hi {}, I\'m RastaBot. How can I help?'.format(member.mention))
-	requests_list = db["requests_list"]
+	requests_list = db["requests_list"] # Get loaded requests from db
 	msg_contents = ''
-	for req in requests_list:
-		desc = requests_list[req]
+	for req in requests_list: # read every key
+		# TODO: enumerate()
+		desc = requests_list[req] # read every value
 		msg_contents += '{rp}{r}: {d}\n'.format(rp = REQUEST_PREFIX, r = req, d = desc)
 	await channel.send(msg_contents)
 
@@ -75,8 +77,9 @@ async def commands_help_request(channel, member):
 	await channel.send('RastaBot commands available for {}'.format(member.mention))
 	commands_list = db["commands_list"]
 	msg_contents = ''
-	for cmd in commands_list:
-		desc = commands_list[cmd]
+	for cmd in commands_list: # read every key
+		# TODO: enumerate()
+		desc = commands_list[cmd] # read every value
 		msg_contents += '{cp}{c}: {d}\n'.format(cp = COMMAND_PREFIX, c = cmd, d = desc)
 	await channel.send(msg_contents)
 
@@ -130,14 +133,15 @@ def get_welcome_message(season):
 	"""Returns a random welcome message from the current season"""
 	seasonal_welcome_messages = db["welcome_message"][season]
 	size = len(seasonal_welcome_messages)
-	random_index = db["welcome_message_index"]
-	if random_index != size - 1:
-		random_index += 1
+	random_index = db["welcome_message_index"] # "Random" is cycling through each one
+	                                           # Appears more random
+	if random_index != size - 1: # If not at the end
+		random_index += 1 # Move to next welcome message
 		db["welcome_message_index"] = random_index
 	else:
 		random_index = 0
 		db["welcome_message_index"] = random_index
-	reply = seasonal_welcome_messages[random_index]
+	reply = seasonal_welcome_messages[random_index] # Send from the seasonal batch
 	print(reply)
 	return reply
 
@@ -179,7 +183,7 @@ def sort_bad_words():
 	"""Sorts list of bad words alphabetically and puts back in db"""
 	bad_words_list = db["bad_word_list"]
 	sorted_list = [ ] 
-	for word in bad_words_list:
+	for word in bad_words_list: # Transfer to simple list to .sort()
 		sorted_list.append(word)
 	sorted_list.sort()
 	db["bad_word_list"] = sorted_list
@@ -234,20 +238,20 @@ async def on_member_join(member):
 	count.members()
 
 	print('{} joined the server'.format(member))
-	welcomed_members = db["welcomed_members"]
+	welcomed_members = db["welcomed_members"] # Find out who we welcomed
 
-	if int(member.id) in welcomed_members:
+	if int(member.id) in welcomed_members: # Don't welcome people a second time
 		return
 	else:
 		#rules_dm = str(db["rules_dm"])
-		#await member.send(rules_dm.format(member.name, REQUEST_PREFIX))
+		#await member.send(rules_dm.format(member.name, REQUEST_PREFIX)) # Send them a DM
 		guild = member.guild
 		channel = guild.system_channel
 		season = db["season"]
-		reply = get_welcome_message(season)
+		reply = get_welcome_message(season) # Get a semi-random welcome message
 		#rules_message = db["rules_message"]
-		welcomed_members.append(int(member.id))
-		await channel.send(reply.format(member.mention, REQUEST_PREFIX))
+		welcomed_members.append(int(member.id)) # Note you've welcomed this person
+		await channel.send(reply.format(member.mention, REQUEST_PREFIX)) # Send it
 		#await channel.send(rules_message) #Only send one message for now
 
 #*****************************************************#
@@ -262,10 +266,11 @@ async def on_member_join(member):
 @client.event
 async def on_raw_reaction_add(payload):
 	count.reactions()
-	role_reaction_id = db["role_reaction_message"]
-	action_reaction_id = db["action_reaction_message"]
-	grow_reaction_id = db["grow_reaction_message"]
+	role_reaction_id = db["role_reaction_message"] # Message to watch for @Irie Army role
+	action_reaction_id = db["action_reaction_message"] # Message to watch for @Actions role
+	grow_reaction_id = db["grow_reaction_message"] # Message to watch for @Grow roles
 
+	# TODO: Update to list driven menu
 	if payload.message_id == int(role_reaction_id): # @Irie Army role reaction
 		print('Role Reaction received from {}'.format(payload.member))
 		
@@ -275,6 +280,7 @@ async def on_raw_reaction_add(payload):
 			irie_army_role = irie_guild.get_role(role_army_id)
 			await payload.member.add_roles(irie_army_role)
 			print(payload.member.roles)
+	
 	elif payload.message_id == int(action_reaction_id): # @Actions role reaction
 		print('Action Reaction received from {}'.format(payload.member))
 		
@@ -288,21 +294,21 @@ async def on_raw_reaction_add(payload):
 	elif payload.message_id == int(grow_reaction_id): # Grow Roles role reaction
 		print('Grow Reaction received from {}'.format(payload.member))
 		
-		if str(payload.emoji) == '🌳':
+		if str(payload.emoji) == '🌳': # @Soil
 			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
 			irie_guild = payload.member.guild
 			soil_role = irie_guild.get_role(soil_grow_id)
 			await payload.member.add_roles(soil_role)
 			print(payload.member.roles)
 
-		if str(payload.emoji) == '💦':
+		if str(payload.emoji) == '💦': # @Soilless
 			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
 			irie_guild = payload.member.guild
 			hydro_role = irie_guild.get_role(hydro_grow_id)
 			await payload.member.add_roles(hydro_role)
 			print(payload.member.roles)	
 
-		if str(payload.emoji) == '🥥':
+		if str(payload.emoji) == '🥥': # @Coco
 			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
 			irie_guild = payload.member.guild
 			coco_role = irie_guild.get_role(coco_grow_id)
@@ -323,15 +329,18 @@ async def on_raw_reaction_add(payload):
 @client.event
 async def on_raw_reaction_remove(payload):
 	count.reactions()
+
+	# Member object not passed, so load it based on the message id
 	irie_guild = client.get_guild(879408430283128843)
 	split_payload = str(payload).split()
 	user_id = split_payload[2][8:]
 	member = irie_guild.get_member(int(user_id))
-	role_reaction_id = db["role_reaction_message"]
-	action_reaction_id = db["action_reaction_message"]
-	grow_reaction_id = db["grow_reaction_message"]
+	
+	role_reaction_id = db["role_reaction_message"] # Message to watch for @Irie Army role
+	action_reaction_id = db["action_reaction_message"] # Message to watch for @Actions role
+	grow_reaction_id = db["grow_reaction_message"] # Message to watch for @Grow roles
 
-	print('on_raw_reaction_remove(): member: {}'.format(user_id))
+	print('on_raw_reaction_remove(): member: {}'.format(member))
 
 	if payload.message_id == role_reaction_id: # @Irie Army role reaction
 
@@ -357,24 +366,23 @@ async def on_raw_reaction_remove(payload):
 
 		print('Action Reaction removal received from {}'.format(member))
 		
-		if str(payload.emoji) == '🌳':
+		if str(payload.emoji) == '🌳': # Soil
 			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
 			soil_role = irie_guild.get_role(soil_grow_id)
 			await member.remove_roles(soil_role)
 			print(member.roles)
 		
-		if str(payload.emoji) == '💦':
+		if str(payload.emoji) == '💦': # Soilless
 			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
 			hydro_role = irie_guild.get_role(hydro_grow_id)
 			await member.remove_roles(hydro_role)
 			print(member.roles)
 
-		if str(payload.emoji) == '🥥':
+		if str(payload.emoji) == '🥥': # Coco
 			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
 			coco_role = irie_guild.get_role(coco_grow_id)
 			await member.remove_roles(coco_role)
 			print(member.roles)
-
 
 #*****************************************************#
 #                 Message Processing:                 #
@@ -391,8 +399,6 @@ async def on_raw_reaction_remove(payload):
 #           - Requests: Require @IrieArmy role        #
 #           - Commands: Require @BotManager role      #
 #*****************************************************#
-
-
 @client.event
 async def on_message(message): # On every message
 	count.message() # Count it
@@ -400,7 +406,7 @@ async def on_message(message): # On every message
 	if message.author == client.user: # Cancel own message
 		return
 
-	if str(message.channel.type) == 'private':
+	if str(message.channel.type) == 'private': # DM's aren't supported, return
 		await message.author.send('Sorry, DM\'s to RastaBot are not currently supported.')
 		return
 
@@ -414,6 +420,7 @@ async def on_message(message): # On every message
 		if role_str.find('BotManager') != -1:
 			bot_manager_role = True
 
+	# You can't filter bad_words from commands and be able to add/remove bad_words with commands
 	if not message.content.startswith('{}'.format(COMMAND_PREFIX)) and bot_manager_role == True: 
 		bad_words_in_message = bad_words_check(message)
 		if bad_words_in_message != '':
@@ -438,7 +445,7 @@ async def on_message(message): # On every message
 
 			if message.content.startswith('{}about'.format(REQUEST_PREFIX)):
 				print('{}about request recieved from {}'.format(REQUEST_PREFIX, message.author))
-				about_msg = get_about()
+				about_msg = get_about() # TODO
 				await message.channel.send(about_msg)
 				await message.channel.send('RastaBot has processed {} users, {} messages and {} reactions.'.format(db["members"], db["messages"], db["reactions"]))
 			
