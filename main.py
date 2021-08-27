@@ -5,7 +5,6 @@ RastaBot developed by Trolan (Trevor Mathisen).
 import discord
 import os
 from replit import db
-import random
 import count
 
 # Configuration variables requested for the rest of the program
@@ -16,17 +15,39 @@ COMMAND_PREFIX = '!' # Prefix for managers to command the bot
 about = db["about"] # Longwinded info about this bot
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
 client = discord.Client(intents = intents)
-role_army_id = 880475456841871401
-requests_avail = {
-	'help':'This request sends a DM containing all possible requests from a user',
-	'links':'(TODO)Sends a user a DM with links to Irie Genetics beans, Grow From Your Heart podcast locations and other important links',
-	'rules':'(TODO)DM the user the current rules message',
-	'waffle_rules':'(TODO)Sends a user a DM with the rules of waffles',
-	'action_rules':'(TODO)Sends a user a DM with the rules of actions',
-	'about':'Sends a user a DM with information about RastaBot'
-}
+role_army_id = int(os.environ['ROLE_ARMY_ID'])
+role_actions_id = int(os.environ['ROLE_ACTIONS_ID'])
+soil_grow_id = int(os.environ['SOIL_GROW_ID'])
+hydro_grow_id = int(os.environ['HYDRO_GROW_ID'])
+coco_grow_id = int(os.environ['COCO_GROW_ID'])
+rules_channel_id = int(os.environ['RULES_CHANNEL_ID'])
+actions_rules_channel_id = int(os.environ['ACTIONS_RULES_CHANNEL_ID'])
+links_channel_id = int(os.environ['LINKS_CHANNEL_ID'])
+action_rules = ''
 
-db["requests_list"] = requests_avail
+async def help_request(channel, member):
+	print('Help request from {}'.format(member.name))
+	await channel.send('Hi {}, I\'m RastaBot. How can I help?'.format(member.mention))
+	requests_list = db["requests_list"]
+	msg_contents = ''
+	for req in requests_list:
+		desc = requests_list[req]
+		msg_contents += '{rp}{r}: {d}\n'.format(rp = REQUEST_PREFIX, r = req, d = desc)
+	await channel.send(msg_contents)
+
+async def commands_help_request(channel, member):
+	print('Commands request from {}'.format(member.name))
+	await channel.send('RastaBot commands available for {}'.format(member.mention))
+	commands_list = db["commands_list"]
+	msg_contents = ''
+	for cmd in commands_list:
+		desc = commands_list[cmd]
+		msg_contents += '{cp}{c}: {d}\n'.format(cp = COMMAND_PREFIX, c = cmd, d = desc)
+	await channel.send(msg_contents)
+
+def get_about():
+	print('TODO: get_about()')
+	return about
 
 def set_welcome_message_season(season):
 	"""Sets the season for the welcome message service"""
@@ -73,7 +94,13 @@ def get_welcome_message(season):
 	"""Returns a random welcome message from the current season"""
 	seasonal_welcome_messages = db["welcome_message"][season]
 	size = len(seasonal_welcome_messages)
-	random_index = random.randrange(0, size)
+	random_index = db["welcome_message_index"]
+	if random_index != size - 1:
+		random_index += 1
+		db["welcome_message_index"] = random_index
+	else:
+		random_index = 0
+		db["welcome_message_index"] = random_index
 	reply = seasonal_welcome_messages[random_index]
 	print(reply)
 	return reply
@@ -92,35 +119,25 @@ def update_rules_dm(rules_dm):
 	reply = 'Successfull changed rules dm to {}'
 	return reply.format(rules_dm)
 
-async def help_request(member):
-	print('Help request from {}'.format(member.name))
-	await member.send('Hi {}, I\'m RastaBot. How can I help?'.format(member.name))
-	requests_list = db["requests_list"]
-	dm_contents = ''
-	for req in requests_list:
-		desc = requests_list[req]
-		dm_contents += '{rp}{r}: {d}\n'.format(rp = REQUEST_PREFIX, r = req, d = desc)
-	await member.send(dm_contents)
-
 @client.event
 async def on_member_join(member):
 	count.members()
-	# TODO: Check against list of previously welcomed members
-	# TODO: Add !debug_remove_user to clear welcomed members for testing
+
 	print('{} joined the server'.format(member))
 	welcomed_members = db["welcomed_members"]
+
 	if int(member.id) in welcomed_members:
 		return
 	else:
-		rules_dm = db["rules_dm"]
-		await member.send(rules_dm)
+		#rules_dm = str(db["rules_dm"])
+		#await member.send(rules_dm.format(member.name, REQUEST_PREFIX))
 		guild = member.guild
 		channel = guild.system_channel
 		season = db["season"]
 		reply = get_welcome_message(season)
 		#rules_message = db["rules_message"]
 		welcomed_members.append(int(member.id))
-		await channel.send(reply.format(member.name))
+		await channel.send(reply.format(member.mention, REQUEST_PREFIX))
 		#await channel.send(rules_message) #Only send one message for now
 
 @client.event
@@ -131,7 +148,10 @@ async def on_ready(): # When ready
 async def on_raw_reaction_add(payload):
 	count.reactions()
 	role_reaction_id = db["role_reaction_message"]
-	if payload.message_id == int(role_reaction_id):
+	action_reaction_id = db["action_reaction_message"]
+	grow_reaction_id = db["grow_reaction_message"]
+
+	if payload.message_id == int(role_reaction_id): # @Irie Army role reaction
 		print('Role Reaction received from {}'.format(payload.member))
 		
 		if str(payload.emoji) == '✅':
@@ -140,16 +160,55 @@ async def on_raw_reaction_add(payload):
 			irie_army_role = irie_guild.get_role(role_army_id)
 			await payload.member.add_roles(irie_army_role)
 			print(payload.member.roles)
+	elif payload.message_id == int(action_reaction_id): # @Actions role reaction
+		print('Action Reaction received from {}'.format(payload.member))
+		
+		if str(payload.emoji) == '✅':
+			print('Received {}action_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
+			irie_guild = payload.member.guild
+			actions_role = irie_guild.get_role(role_actions_id)
+			await payload.member.add_roles(actions_role)
+			print(payload.member.roles)
+
+	elif payload.message_id == int(grow_reaction_id): # Grow Roles role reaction
+		print('Grow Reaction received from {}'.format(payload.member))
+		
+		if str(payload.emoji) == '🌳':
+			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
+			irie_guild = payload.member.guild
+			soil_role = irie_guild.get_role(soil_grow_id)
+			await payload.member.add_roles(soil_role)
+			print(payload.member.roles)
+
+		if str(payload.emoji) == '💦':
+			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
+			irie_guild = payload.member.guild
+			hydro_role = irie_guild.get_role(hydro_grow_id)
+			await payload.member.add_roles(hydro_role)
+			print(payload.member.roles)	
+
+		if str(payload.emoji) == '🥥':
+			print('Received {}grow_role reaction from {}'.format(REQUEST_PREFIX, payload.member))
+			irie_guild = payload.member.guild
+			coco_role = irie_guild.get_role(coco_grow_id)
+			await payload.member.add_roles(coco_role)
+			print(payload.member.roles)
 
 @client.event
 async def on_raw_reaction_remove(payload):
 	count.reactions()
+	irie_guild = client.get_guild(879408430283128843)
+	split_payload = str(payload).split()
+	user_id = split_payload[2][8:]
+	member = irie_guild.get_member(int(user_id))
 	role_reaction_id = db["role_reaction_message"]
-	if payload.message_id == role_reaction_id:
-		split_payload = str(payload).split()
-		user_id = split_payload[2][8:]
-		irie_guild = client.get_guild(879408430283128843)
-		member = irie_guild.get_member(int(user_id))
+	action_reaction_id = db["action_reaction_message"]
+	grow_reaction_id = db["grow_reaction_message"]
+
+	print('on_raw_reaction_remove(): member: {}'.format(user_id))
+
+	if payload.message_id == role_reaction_id: # @Irie Army role reaction
+
 		print('Role Reaction removal received from {}'.format(member))
 
 		if str(payload.emoji) == '✅':
@@ -158,6 +217,40 @@ async def on_raw_reaction_remove(payload):
 			await member.remove_roles(irie_army_role)
 			print(member.roles)
 
+	elif payload.message_id == action_reaction_id: # @Actions role reaction
+
+		print('Action Reaction removal received from {}'.format(member))
+		
+		if str(payload.emoji) == '✅':
+			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
+			actions_role = irie_guild.get_role(role_actions_id)
+			await member.remove_roles(actions_role)
+			print(member.roles)
+	
+	elif payload.message_id == grow_reaction_id: # Grow Role role reaction
+
+		print('Action Reaction removal received from {}'.format(member))
+		
+		if str(payload.emoji) == '🌳':
+			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
+			soil_role = irie_guild.get_role(soil_grow_id)
+			await member.remove_roles(soil_role)
+			print(member.roles)
+		
+		if str(payload.emoji) == '💦':
+			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
+			hydro_role = irie_guild.get_role(hydro_grow_id)
+			await member.remove_roles(hydro_role)
+			print(member.roles)
+
+		if str(payload.emoji) == '🥥':
+			print('Received {}action_role removal reaction from {}'.format(REQUEST_PREFIX, member))
+			coco_role = irie_guild.get_role(coco_grow_id)
+			await member.remove_roles(coco_role)
+			print(member.roles)
+
+
+
 @client.event
 async def on_message(message): # On every message
 	count.message() # Count it
@@ -165,8 +258,20 @@ async def on_message(message): # On every message
 	if message.author == client.user: # Cancel own message
 		return
 
-	if message.content.startswith('ping'): # Simple test the bot is working
+	if str(message.channel.type) == 'private':
+		await message.author.send('Sorry, DM\'s to RastaBot are not currently supported.')
+		return
+
+	if message.content.startswith('ping') or message.content.startswith('Ping'): # Simple test the bot is working
 		await message.channel.send('pong!')
+
+	if 'auction' in message.clean_content.lower():
+		await message.channel.send('Hey {}, watch your mouth. We don\'t do auctions around here'.format(message.author.mention))
+		return
+
+	if 'raffle' in message.clean_content.lower():
+		await message.channel.send('Hey {}, watch your mouth. We don\'t do raffles around here'.format(message.author.mention))
+		return
 
 	if message.content.startswith(REQUEST_PREFIX): # Route Requests
 		irie_army_role = False # Assume nothing
@@ -180,28 +285,42 @@ async def on_message(message): # On every message
 			await message.author.send('Please read the #rules-and-etiquette room and react to the appropriate message to add the @Irie Army role')
 			return
 
-		if irie_army_role == True: # Commands for the BotManagers
+		if irie_army_role == True: # Commands for the users
 			if message.content.startswith('{}help'.format(REQUEST_PREFIX)):
-				await message.channel.send('{}, check your DM\'s for help.'.format(message.author.name))
-				await help_request(message.author)
-
-			if message.content.startswith('{}veteran'.format(REQUEST_PREFIX)):
-				print('Received {}veteran request from {}'.format(REQUEST_PREFIX, message.author))
-				irie_guild = message.author.guild
-				irie_vet_role = irie_guild.get_role(role_vet_id)
-				await message.author.add_roles(irie_vet_role)
-				print(message.author.roles)
-
-			if message.content.startswith('{}army_role'.format(REQUEST_PREFIX)):
-				print('Received {}army_role request from {}'.format(REQUEST_PREFIX, message.author))
-				irie_guild = message.author.guild
-				irie_army_role = irie_guild.get_role(role_army_id)
-				await message.author.add_roles(irie_army_role)
-				print(message.author.roles)
+				await help_request(message.channel, message.author)
 
 			if message.content.startswith('{}about'.format(REQUEST_PREFIX)):
 				print('{}about request recieved from {}'.format(REQUEST_PREFIX, message.author))
-				await message.author.send(about)
+				about_msg = get_about()
+				await message.channel.send(about_msg)
+				await message.channel.send('RastaBot has processed {} users, {} messages and {} reactions.'.format(db["members"], db["messages"], db["reactions"]))
+			
+			if message.content.startswith('{}rules'.format(REQUEST_PREFIX)):
+				print('{}rules request received from {}'.format(REQUEST_PREFIX, message.author))
+				rules_msg_id = db["rules_message_id"]
+				member = message.author
+				rules_channel = member.guild.get_channel(rules_channel_id)
+				rules_msg = await rules_channel.fetch_message(rules_msg_id)
+				await member.send(rules_msg.content)
+				await message.channel.send('{}, you can find the rules in the {} channel and I\'ve sent them as a DM as well. Let the mods know if you need any help or have questions.'.format(member.mention, rules_channel.mention))
+
+			if (message.content.startswith('{}action_rules'.format(REQUEST_PREFIX))) or (message.content.startswith('{}waffle_rules'.format(REQUEST_PREFIX))) or (message.content.startswith('{}actions_rules'.format(REQUEST_PREFIX))) or (message.content.startswith('{}waffles_rules'.format(REQUEST_PREFIX))):
+				print('{}action/waffle_rules request received from {}'.format(REQUEST_PREFIX, message.author))
+				actions_rules_msg_id = db["actions_rules_message_id"]
+				member = message.author
+				actions_rules_channel = member.guild.get_channel(actions_rules_channel_id)
+				actions_rules_msg = await actions_rules_channel.fetch_message(actions_rules_msg_id)
+				await member.send(actions_rules_msg.content)
+				await message.channel.send('{}, rules for actions and waffles can be found in the {} channel and I\'ve sent them as a DM as well. Let the mods know if you need any help or have questions.'.format(member.mention, actions_rules_channel.mention))
+				
+			if message.content.startswith('{}links'.format(REQUEST_PREFIX)):
+				print('{}links request received from {}'.format(REQUEST_PREFIX, message.author))
+				links_msg_id = db["links_message_id"]
+				member = message.author
+				links_channel = member.guild.get_channel(links_channel_id)
+				links_msg = await links_channel.fetch_message(links_msg_id)
+				await member.send(links_msg.content)
+				await message.channel.send('{}, I sent you a copy of the links from {}. Let us know if something should be added!'.format(member.mention, links_channel.mention))
 
 	if message.content.startswith(COMMAND_PREFIX): # All commands for the bot
 		bot_manager_role = False # Assume nothing
@@ -217,6 +336,9 @@ async def on_message(message): # On every message
 
 		if bot_manager_role == True: # Commands for the BotManagers
 			print('Command issued by BotManager {}'.format(message.author))
+
+			if message.content.startswith('{}help'.format(COMMAND_PREFIX)):
+				await commands_help_request(message.channel, message.author)
 
 			if message.content.startswith('{}get_season'.format(COMMAND_PREFIX)):
 				reply = get_welcome_message_season()
@@ -266,7 +388,9 @@ async def on_message(message): # On every message
 				await message.channel.send(reply)
 
 			if message.content.startswith('{}update_rules_dm'.format(COMMAND_PREFIX)):
-				new_rules_dm = message.content[16:]
+				split_message = message.content.split()
+				new_rules_dm = split_message[2:]
+				new_rules_dm = ' '.join(new_rules_dm)
 				reply = update_rules_dm(new_rules_dm)
 				await message.channel.send(reply)
 
@@ -283,6 +407,36 @@ async def on_message(message): # On every message
 				split_message = message.content.split()
 				new_message_id = int(split_message[1])
 				db["role_reaction_message"] = int(new_message_id)
+				await message.channel.send('Done')
+
+			if message.content.startswith('{}new_action_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["action_reaction_message"] = int(new_message_id)
+				await message.channel.send('Done')
+
+			if message.content.startswith('{}new_grow_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["grow_reaction_message"] = int(new_message_id)
+				await message.channel.send('Done')
+
+			if message.content.startswith('{}new_rules_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["rules_message_id"] = int(new_message_id)
+				await message.channel.send('Done')
+
+			if message.content.startswith('{}new_actions_rules_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["actions_rules_message_id"] = int(new_message_id)
+				await message.channel.send('Done')
+
+			if message.content.startswith('{}new_links_message_id'.format(COMMAND_PREFIX)):
+				split_message = message.content.split()
+				new_message_id = int(split_message[1])
+				db["links_message_id"] = int(new_message_id)
 				await message.channel.send('Done')
 
 client.run(DISCORD_TOKEN)
