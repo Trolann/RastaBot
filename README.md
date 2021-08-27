@@ -12,6 +12,7 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - $waffle_rules/waffles_rules: Sends a user a DM with the rules of waffles
     - $action_rules/actions_rules: Sends a user a DM with the rules of actions
     - $about: Shows information about RastaBot wherever the request is issued
+    - Monitors user messages in all channels the bot is in. Tags users and responds when a custom list of bad words is mentioned.
  # Commands
     - !get_season: Shows the current welcome message season
     - !set_season [season_name]: Sets the current season to a known season (prevents typos)
@@ -24,6 +25,11 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - !new_rules_message_id [id]: Sets which message the bot should copy when sending the rules
     - !new_actions_message_id [id]: Sets which message the bot should copy when sending the actions/waffle rules
     - !new_links_message_id [id]: Sets which message the bot should copy when sending links.
+    - !db_update [db_key] [db_value]: Put a key:value pair in the db manually
+    - !db_delete [db_ley]: Delete a key entirely from the db. Requires confirmation in the console (Trolan)
+    - !add_bad_word [bad word or phrase]: Adds a new bad word or phrase to the list
+    - !list_bad_words: Lists all current bad words
+    - !delete_bad_word [bad word or phrase]: Deletes a bad word or phrase from the list
     
     
 >This bot is free to the Irie Army but does have a low cloud operating cost. If you want to help me out, or buy me a beer: 
