@@ -15,6 +15,7 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - Monitors user messages in all channels the bot is in. Tags users and responds when a custom list of bad words is mentioned.
  ## Commands
     - !help: Prints the help message in the same channel requested
+    - !kill: Kills bot's container using os.system('kill 1') and prints a statement upon restart. Use when bot is not responding
   ### Welcome Messages
     - !get_season: Shows the current welcome message season
     - !set_season [season_name]: Sets the current season to a known season (prevents typos)
