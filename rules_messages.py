@@ -27,3 +27,5 @@ def update_dm(rules_dm):
 	print('length of rules_dm: {}'.format(len(rules_dm)))
 	reply = 'Successfully changed rules dm to {}'
 	return reply.format(rules_dm)
+
+print('Loaded rules_messages.py')

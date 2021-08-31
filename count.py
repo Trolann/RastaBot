@@ -21,3 +21,5 @@ def reactions():
 	reactions += 1
 	db["reactions"] = reactions # Store new value
 	print('reactions processed: {}'.format(reactions)) # Console log
+
+print('Loaded count.py')

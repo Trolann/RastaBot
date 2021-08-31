@@ -40,3 +40,5 @@ def check_message(message):
 		words_said = words_said.replace(' or', ',', word_count - 1)
 	
 	return words_said # Send back {}, {} or {} of bad words
+
+print('Loaded bad_words.py')
