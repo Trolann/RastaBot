@@ -1,11 +1,11 @@
-## RastaBot for the Irie Army discord server
+### RastaBot for the Irie Army discord server
 
-## About
+### About
 RastaBot is a custom bot created for the Irie Army discord server. This bot's main objective is to help the users and moderators of the Irie Army discord better enjoy their time in the community. RastaBot is not intended as a moderator replacement.
 
-## Features Overview
+### Features Overview
 The RastaBot supports requests (from users) and commands (from BotManagers)
- # Requests
+ ## Requests
     - $help: This request sends a DM containing all possible requests from a user
     - $links: Sends a user a DM with links to Irie Genetics beans, Grow From Your Heart podcast locations and other important links
     - $rules: DM the user the current rules message
@@ -13,7 +13,7 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - $action_rules/actions_rules: Sends a user a DM with the rules of actions
     - $about: Shows information about RastaBot wherever the request is issued
     - Monitors user messages in all channels the bot is in. Tags users and responds when a custom list of bad words is mentioned.
- # Commands
+ ## Commands
     - !get_season: Shows the current welcome message season
     - !set_season [season_name]: Sets the current season to a known season (prevents typos)
     - !new_season [season_name]: Creates a new season
