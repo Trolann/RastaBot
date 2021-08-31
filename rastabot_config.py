@@ -130,7 +130,7 @@ def update_all():
 	update_links_available()
 	return 'Loaded rastabot_config.py'
 
-# async def get_links(channel, member, key):
+# async def get_links(channel, member, key): 
 # 	print('Links request received from {}'.format(member.name))
 
 # 	if key not in ('all', 'irie', 'irie genetics', 'seeds', 'beans', 'podcast', 'gfyh', 'gfyh podcast'):

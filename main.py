@@ -1,5 +1,5 @@
 """
-RastaBot developed by Trolan (Trevor Mathisen).
+RastaBot developed by Trolan (Trevor Mathisen). 
 """
 import discord
 import os
