@@ -5,7 +5,8 @@ def message():
 	messages = db["messages"] # Always get previous value from DB
 	messages += 1
 	db["messages"] = messages # Store new value
-	print('Messages processed: {}'.format(messages)) # Console log
+	if messages % 10 == 0:
+		print('Messages processed: {}'.format(messages)) # Console log
 
 def members():
 	"""Counts total members processed. Called on every on_member_joined()"""
