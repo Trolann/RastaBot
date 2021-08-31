@@ -34,7 +34,7 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - !delete_reaction_message [msg_id]: Tells the bot to no longer watch this message AND DELETES ALL ASSOCIATED EMOJIS AND ROLES
     - !new_role_reaction [msg_id] [emoji] [role_id]: Tells the bot to assign/remove role_id when the emoji reaction is a added/removed from msg_id
     - !delete_role_reaction [msg_id] [emoji]: Deletes the emoji:role_id pairing from the msg_id - the bot no longer assigns that role for that emoji
-    
+    - !list_role_reaction [msg_id]: Lists all available reactions for the given msg_id
     
     
 >This bot is free to the Irie Army but does have a low cloud operating cost. If you want to help me out, or buy me a beer: 
