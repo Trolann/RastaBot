@@ -28,6 +28,7 @@ The RastaBot supports requests (from users) and commands (from BotManagers)
     - !new_rules_message_id [id]: Sets which message the bot should copy when sending the rules
     - !new_actions_message_id [id]: Sets which message the bot should copy when sending the actions/waffle rules
     - !new_links_message_id [id]: Sets which message the bot should copy when sending links.
+		- !new_yoga_message_id [id]: Sets which message the bot should copy when sending yoga rules.
    ### Bad word processing
     - !add_bad_word [bad word or phrase]: Adds a new bad word or phrase to the list
     - !list_bad_words: Lists all current bad words
