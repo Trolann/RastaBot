@@ -9,6 +9,7 @@ import rastabot
 import bad_words
 import welcome_messages
 import rules_messages
+import podcast
 
 # Configuration variables requested for the rest of the program
 intents = discord.Intents.default()
@@ -19,6 +20,7 @@ rules_channel = ''
 actions_rules_channel = ''
 yoga_rules_channel = ''
 links_channel = ''
+og_channel = ''
 REQUEST_PREFIX = db["REQUEST_PREFIX"] # Prefix for users to interact with bot
 COMMAND_PREFIX = db["COMMAND_PREFIX"] # Prefix for managers to command the bot
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
@@ -37,6 +39,7 @@ async def on_ready(): # When ready
 	global actions_rules_channel
 	global links_channel
 	global yoga_rules_channel
+	global og_channel
 	irie_guild = client.get_guild(IRIE_GUILD_ID)
 	print(irie_guild)
 	rules_channel = irie_guild.get_channel(int(db["rules_channel_id"]))
@@ -47,6 +50,8 @@ async def on_ready(): # When ready
 	print(links_channel)
 	yoga_rules_channel = irie_guild.get_channel(int(db["yoga_channel_id"]))
 	print(yoga_rules_channel)
+	og_channel = irie_guild.get_channel(int(db["og_channel"]))
+	print(og_channel)
 	print(rastabot.update_all())
 	print('We have logged in as {0.user}'.format(client))
 	was_killed = bool(db["system_killed"])
@@ -94,8 +99,18 @@ async def on_member_join(member):
 		#rules_message = db["rules_message"]
 		welcomed_members.append(int(member.id)) # Note you've welcomed this person
 		db["welcomed_members"] = welcomed_members
+		print(reply.format(member.mention, REQUEST_PREFIX))
 		await channel.send(reply.format(member.mention, REQUEST_PREFIX)) # Send it
 		#await channel.send(rules_message) # Only send one message for now
+	
+	if db["auto status"] == 1:
+		name, url = podcast.check_new()
+		if name is not None:
+			db["podcast status"] = 1
+			db["gfyh number"] = name[1:4]
+			db["gfyh url"] = url
+			await client.change_presence(activity=discord.Activity(type=discord.ActivityType.streaming, name='GFYH Podcast #{}'.format(name[1:4]), url=url))
+			print('New podcast found: {} at {}'.format(name[1:4], url))
 
 #*****************************************************#
 #              Reaction Add Processing:               #
@@ -186,10 +201,17 @@ async def on_message(message): # On every message
 		print('ping?/pong! processed from {}'.format(message.author))
 		await message.channel.send('pong!')
 
+	if db["podcast status"] == 1:
+		db["podcast status"] = 1
+		number = db["gfyh number"]
+		new_url = db["gfyh url"]
+		await client.change_presence(activity=discord.Activity(type=discord.ActivityType.streaming, name='GFYH Podcast #{}'.format(number), url=new_url))
+
 	if str(message.channel.type) == 'private':
 		member = irie_guild.get_member(message.author.id)
 		channel = member
-		print('MEMBER: {}'.format(member))
+		print('DM from: {}'.format(member))
+		print('Message: {}'.format(message.clean_content))
 	else:
 		member = message.author
 		channel = message.channel
@@ -208,17 +230,22 @@ async def on_message(message): # On every message
 			if id == irie_guild.get_role(int(db["bot_manager_id"])):
 				bot_manager = True
 	
-	if str(message.author) == 'Trolan#7880':
+	if message.content.startswith('{}'.format(COMMAND_PREFIX)) and str(message.author) == 'Trolan#7880':
 		bot_manager = True
 
 	# TODO: bad_words.check_message(message) return reply
 	# You can't filter bad_words from commands and be able to add/remove bad_words with commands
-	if not message.content.startswith('{}delete_bad_word'.format(COMMAND_PREFIX)) and not bot_manager: 
+	if not message.content.startswith('{}'.format(COMMAND_PREFIX)) and not bot_manager: 
 		# Process bad words if it's not a command from a BotManager or not a DM
 		bad_words_in_message = bad_words.check_message(message)
+		blacklist_in_message = bad_words.blacklist_check_message(message)
 		if bad_words_in_message != '':
 			await channel.send('Hey {}, watch your mouth. We don\'t mention {} around here.'.format(member.mention, bad_words_in_message))
 			return
+
+		if blacklist_in_message != '':
+			await og_channel.send('{} said a blacklisted word(s) in {}: {}'.format(message.author, message.channel.mention, blacklist_in_message))
+			print('BLACKLIST WORD DETECTED')
 
 	try:
 		if message.clean_content[0] not in (REQUEST_PREFIX, COMMAND_PREFIX):
@@ -421,7 +448,7 @@ async def on_message(message): # On every message
 			if message.content.startswith('{}db_update'.format(COMMAND_PREFIX)):
 				split_message = message.content.split()
 				db_key = split_message[1]
-				db_value = split_message[2]
+				db_value = message.content[12 + len(db_key):]
 				reply = rastabot.command_db_update(db_key, db_value)
 				await channel.send(reply)
 
@@ -448,6 +475,25 @@ async def on_message(message): # On every message
 				await channel.send('Deleted {} from the list'.format(to_delete))
 				bad_words_reply = bad_words.list()
 				await channel.send(bad_words_reply)
+
+			if message.content.startswith('{}add_blacklist_word'.format(COMMAND_PREFIX)):
+				blacklist_list = db["blacklist_list"]
+				blacklist_list.append(message.clean_content[20:])
+				db["blacklist_list"] = blacklist_list
+				await channel.send('Added {} to blacklist_list'.format(blacklist_list[-1]))
+
+			if message.content.startswith('{}list_blacklist_words'.format(COMMAND_PREFIX)):
+				blacklist_list = list(db["blacklist_list"])
+				reply = blacklist_list
+				await channel.send(reply)
+
+			if message.content.startswith('{}delete_blacklist_word'.format(COMMAND_PREFIX)):
+				to_delete = message.clean_content[23:]
+				blacklist_list = list(db["blacklist_list"])
+				blacklist_list.remove(to_delete)
+				db["blacklist_list"] = blacklist_list
+				await channel.send('Deleted {} from the blacklist list'.format(to_delete))
+				await channel.send(blacklist_list)
 
 		if message.content.startswith('{}new_reaction_message'.format(COMMAND_PREFIX)):
 			split_message = message.content.split()
@@ -546,5 +592,36 @@ async def on_message(message): # On every message
 			await channel.send('Role reactions available for message {}'.format(msg_id))
 			for emoji in db_dict[msg_id]:
 				await channel.send('Emoji {e} gives you the {r} role (Role ID: {ri})'.format(e = emoji, r = irie_guild.get_role(int(db_dict[msg_id][emoji])), ri = db_dict[msg_id][emoji]))
+		
+		if message.content.startswith('{}new_status'.format(COMMAND_PREFIX)):
+			if message.content[12:15].isdigit():
+				number = message.content[12:15]
+				new_url = message.content[16:]
+				db["podcast status"] = 1
+				db["gfyh number"] = number
+				db["gfyh url"] = new_url
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.streaming, name='GFYH Podcast #{}'.format(number), url=new_url))
+				await channel.send('Updated status for podcast {} at {}'.format(number, new_url))
+			elif message.content[12:].startswith('clear'):
+				print('CLEAR COMMAND')
+				await client.change_presence(status=None)
+				db["auto status"] = 0
+				db["podcast status"] = 0
+				db["gfyh number"] = 0
+				db["gfyh url"] = ''
+				await channel.send('Status cleared, auto status disabled.')
+
+		if message.content.startswith('{}auto_status'.format(COMMAND_PREFIX)):
+			db["auto status"] = 1
+			await channel.send('Auto status enabled - waiting for new podcasts.')
+
+			name, url = podcast.check_new()
+			if name is not None:
+				await channel.send('Found a new podcast. Updating')
+				db["podcast status"] = 1
+				db["gfyh number"] = name[1:4]
+				db["gfyh url"] = url
+				await client.change_presence(activity=discord.Activity(type=discord.ActivityType.streaming, name='GFYH Podcast #{}'.format(name[1:4]), url=url))
+				print('New podcast found: {} at {}'.format(name[1:4], url))
 
 client.run(DISCORD_TOKEN)

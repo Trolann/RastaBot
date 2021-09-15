@@ -60,7 +60,7 @@ def get_about():
 	"""Return about information (TODO)"""
 	print('get_about() called')
 	about_msg = []
-	about_msg.append(db["about"])
+	about_msg.append(str(db["about"]))
 	about_msg.append('RastaBot has processed {} users, {} messages and {} reactions.'.format(db["members"], db["messages"], db["reactions"]))
 	return about_msg
 

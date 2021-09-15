@@ -69,7 +69,6 @@ def get_message(season):
 		random_index = 0
 		db["welcome_message_index"] = random_index
 	reply = seasonal_welcome_messages[random_index] # Send from the seasonal batch
-	print(reply)
 	return reply
 
 print('Loaded welcome_messages.py')

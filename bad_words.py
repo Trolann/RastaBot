@@ -27,9 +27,9 @@ def check_message(message):
 	#TODO: Look at stripping whitespace and alerting off of that (or messaging)
 	words_said = '' # Blank reply
 	bad_word_check = db["bad_word_list"]
-	stripped = message.clean_content.lower().replace(' ', '')
+	clean_content = message.clean_content.lower()
 	for word in bad_word_check: # For every bad word we have
-		if word in stripped: # See if its in the message
+		if word in clean_content: # See if its in the message
 			if words_said == '': # If it's the first word found, add it
 				words_said += word
 			else:
@@ -40,5 +40,22 @@ def check_message(message):
 		words_said = words_said.replace(' or', ',', word_count - 1)
 	
 	return words_said # Send back {}, {} or {} of bad words
+
+def blacklist_check_message(message):
+	words_said = '' # Blank reply
+	blacklist_check = db["blacklist_list"]
+	clean_content = message.clean_content.lower()
+	for word in blacklist_check:
+		if word in clean_content:
+			if words_said == '': # If it's the first word found, add it
+				words_said += word
+			else:
+				words_said += ' or {}'.format(word) # or add to list if its not
+	word_count = words_said.count(' or')
+
+	if word_count != 1:
+		words_said = words_said.replace(' or', ',', word_count - 1)
+			
+	return words_said
 
 print('Loaded bad_words.py')
