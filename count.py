@@ -20,6 +20,7 @@ def reactions():
 	reactions = db["reactions"] # Always get previous value from DB
 	reactions += 1
 	db["reactions"] = reactions # Store new value
-	print('reactions processed: {}'.format(reactions)) # Console log
+	if reactions % 10 == 0:
+		print('reactions processed: {}'.format(reactions)) # Console log
 
 print('Loaded count.py')

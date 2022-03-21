@@ -1,7 +1,10 @@
 from replit import db
+import asyncio
+from datetime import datetime
 
 REQUEST_PREFIX = db["REQUEST_PREFIX"]
 COMMAND_PREFIX = db["COMMAND_PREFIX"]
+timer_expire = 0
 
 #*****************************************************#
 #  Function Group: Database Update Functions          #
@@ -58,11 +61,36 @@ def help_commands(member):
 
 def get_about():
 	"""Return about information (TODO)"""
-	print('get_about() called')
 	about_msg = []
 	about_msg.append(str(db["about"]))
 	about_msg.append('RastaBot has processed {} users, {} messages and {} reactions.'.format(db["members"], db["messages"], db["reactions"]))
+	about_msg.append('Use {}help to see all commands avaialble for RastaBot'.format(REQUEST_PREFIX))
 	return about_msg
+
+def check_dab_timer():
+	global timer_expire
+	if timer_expire == 0:
+		timer_expire = int(db["dab_timer_expire"])
+	current_epoch = (datetime.now() - datetime(1970,1,1)).total_seconds()
+	seconds_left = timer_expire - current_epoch
+	if seconds_left <= 0:
+		seconds_left = 0
+	print(seconds_left)
+	return int(seconds_left)
+
+def clear_dab_timer():
+	global timer_expire
+	timer_expire = (datetime.now() - datetime(1970,1,1)).total_seconds()
+	db["dab_timer_expire"] = timer_expire
+	asyncio.sleep(1)
+	return check_dab_timer()
+
+def start_dab_timer():
+	global timer_expire
+	current_epoch = (datetime.now() - datetime(1970,1,1)).total_seconds()
+	timer_expire = current_epoch + (int(db['dab_timer_minutes']) * 60)
+	db["dab_timer_expire"] = timer_expire
+	return True
 
 def update_requests_available():
 	requests_avail = {
@@ -70,6 +98,7 @@ def update_requests_available():
 		'links':'Sends a user a DM with links to Irie Genetics beans, Grow From Your Heart podcast locations and other important links',
 		'yoga':'DM the user information and rules about Stoner Yoga',
 		'rules':'DM the user the current rules message',
+		'tester':'Tags the user or a tagged user with a link to the GFYH podcast which covers testers',
 		'waffle_rules/waffles_rules':'Sends a user a DM with the rules of waffles',
 		'action_rules/actions_rules':'Sends a user a DM with the rules of actions',
 		'about':'Shows information about RastaBot wherever the request is issued'
@@ -136,137 +165,13 @@ def update_all():
 	update_links_available()
 	return 'Loaded rastabot_config.py'
 
-def process_message(trigger, member, content, clean_content):
-	print('(DEBUG) process_message(trigger, member, content, clean_content) called')
-	# This isn't needed after debug because every command below will print the response.
-	reply = None
-	rigger = trigger[1:]
-	if rigger == 'help':
-		if trigger[0] == REQUEST_PREFIX:
-			print('Received {}help request from {}'.format(REQUEST_PREFIX, member))
-			reply = help_request(member)
-		else:
-			print('Received {}help request from {}'.format(COMMAND_PREFIX, member))
-			reply = help_commands(member)
-		return reply
-
-	if rigger == 'about':
-		print('Received {}about request from {}'.format(REQUEST_PREFIX, member))
-		reply = get_about()
-		
-		return reply
-	
-	if rigger == 'rules':
-		print('Received {}rules request from {}'.format(REQUEST_PREFIX, member))
-		#clean_content is rules_
-
-		return reply
-	if rigger == 'action_rules/actions_rules':
-		print('Received {}action_rules/actions_rules request from {}'.format(REQUEST_PREFIX, member))
-
-		return reply
-	if rigger == 'links':
-		print('Received {}links request from {}'.format(REQUEST_PREFIX, member))
-
-		return reply
-	if rigger == 'get_season':
-		print('Received {}get_season command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'set_season':
-		print('Received {}set_season command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_season':
-		print('Received {}new_season command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_welcome_message':
-		print('Received {}new_welcome_message command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'list_welcome_messages':
-		print('Received {}list_welcome_messages command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'delete_welcome_messages':
-		print('Received {}delete_welcome_messages command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'update_rules_message':
-		print('Received {}update_rules_message command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'update_rules_dm':
-		print('Received {}update_rules_dm command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'clear_welcomed_members':
-		print('Received {}clear_welcomed_members command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_action_message_id':
-		print('Received {}new_action_message_id command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_rules_message_id':
-		print('Received {}new_rules_message_id command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_actions_rules_message_id':
-		print('Received {}new_actions_rules_message_id command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-
-	if rigger == 'new_links_message_id':
-		print('Received {}new_links_message_id command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'db_update':
-		print('Received {}db_update command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'db_delete':
-		print('Received {}db_delete command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'add_bad_word':
-		print('Received {}add_bad_word command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'list_bad_words':
-		print('Received {}list_bad_words command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'delete_bad_word':
-		print('Received {}delete_bad_word command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'new_reaction_message':
-		print('Received {}new_reaction_message command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'delete_reaction_message':
-		print('Received {}delete_reaction_message command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
-	if rigger == 'list_role_reaction':
-		print('Received {}list_role_reaction command from {}'.format(COMMAND_PREFIX, member))
-
-		return reply
+async def dab_timer(seconds):
+	global timer
+	timer = True
+	while True:
+		await asyncio.sleep(1)
+		seconds -= 1
+		if seconds <= 0:
+			timer = False
+			break
 	return
-
-# async def get_links(channel, member, key): 
-# 	print('Links request received from {}'.format(member.name))
-
-# 	if key not in ('all', 'irie', 'irie genetics', 'seeds', 'beans', 'podcast', 'gfyh', 'gfyh podcast'):
-# 		reply = "Available categories: 'all', 'irie' or 'irie genetics', 'seeds' or 'beans' and 'podcast', 'gfyh podcast' or 'gfyh'| Your given category: {}"
-# 	else:
-# 		
-# 		if key in ('irie', 'irie genetics'):
-# 			reply += 'Irie Genetics Links:\n'
-# 		if key in ('seeds', 'beans'):
-# 			return
-# 		if key in ('podcast', 'gfyh', 'gfyh podcast'):
-# 			return
-# 	await channel.send(reply.format(key))
