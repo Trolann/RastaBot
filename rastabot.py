@@ -34,7 +34,6 @@ def command_db_delete(key):
 		return 'Negative response received. Did not delete {}'.format(key)
 
 def help_request(member):
-	print('help_request(member) called')
 	"""Retrieve all requests and send formatted message to channel"""
 	print('Help request from {}'.format(member.mention))
 	msg_contents = ''
@@ -95,12 +94,7 @@ def start_dab_timer():
 def update_requests_available():
 	requests_avail = {
 		'help':'This request sends a DM containing all possible requests from a user',
-		'links':'Sends a user a DM with links to Irie Genetics beans, Grow From Your Heart podcast locations and other important links',
-		'yoga':'DM the user information and rules about Stoner Yoga',
-		'rules':'DM the user the current rules message',
 		'tester':'Tags the user or a tagged user with a link to the GFYH podcast which covers testers',
-		'waffle_rules/waffles_rules':'Sends a user a DM with the rules of waffles',
-		'action_rules/actions_rules':'Sends a user a DM with the rules of actions',
 		'about':'Shows information about RastaBot wherever the request is issued'
 	}
 
@@ -133,37 +127,10 @@ def update_commands_available():
 	db["commands_list"] = commands_avail
 	return commands_avail
 
-def update_links_available():
-	irie_genetics_links = {
-		'Irie Genetics Website':'https://www.iriegenetics.com/',
-		'Irie Genetics Grow Questions':'https://www.iriegenetics.com/grow-questions/'
-	}
-
-	seed_vendors = {
-		'Seeds Here Now':'https://seedsherenow.com/breeders/irie-genetics/',
-		'Chi Town Seeds':'https://chitownseeds.com/vendor/irie-genetics/'
-	}
-
-	gfyh_podcast_links = {
-		'YouTube':'https://www.youtube.com/c/TheGrowFromYourHeartPodcast',
-		'iTunes Store':'https://podcasts.apple.com/us/podcast/grow-from-your-heart-podcast-hosted-by-rasta-jeff-irie/id850999151?mt=2',
-		'Stitcher':'https://www.stitcher.com/show/the-grow-from-your-heart-podcast-hosted-by-rasta-jeff-of-irie/'
-	}
-
-
-	links_avail = {
-		'Irie Genetics': irie_genetics_links,
-		'Seed Vendors': seed_vendors,
-		'Grow From Your Heart Podcast': gfyh_podcast_links
-	}
-
-	return links_avail
-
 def update_all():
 	update_requests_available()
 	update_commands_available()
-	update_links_available()
-	return 'Loaded rastabot_config.py'
+	return 'Loaded rastabot.py'
 
 async def dab_timer(seconds):
 	global timer
@@ -175,3 +142,10 @@ async def dab_timer(seconds):
 			timer = False
 			break
 	return
+
+def check_bot_manager(member, bot_manager_role):
+	bot_manager = False
+	for role in member.roles:
+		if role == bot_manager_role:
+			bot_manager = True
+	return bot_manager

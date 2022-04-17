@@ -29,3 +29,5 @@ def check_if_notified(tester_id):
 def clear_testers():
 	tester_members = [123, 456]
 	db["tester_members"] = tester_members
+
+print('Loaded tester.py')

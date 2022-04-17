@@ -9,7 +9,6 @@ import count
 import rastabot
 import bad_words
 import welcome_messages
-import rules_messages
 import podcast
 import tester
 
@@ -22,14 +21,10 @@ client = discord.Client(intents = intents)
 # TODO1: Update to dict[guild_name][channel][channel_id]
 # Also I don't think I need to declare these here
 irie_guild = ''
-rules_channel = ''
-actions_rules_channel = ''
-links_channel = ''
 bot_channel = ''
 tester_channel = ''
 voice_channel = ''
 gfyh_podcast_channel = ''
-irie_podcast_channel = ''
 REQUEST_PREFIX = db["REQUEST_PREFIX"] # Prefix for users to interact with bot
 COMMAND_PREFIX = db["COMMAND_PREFIX"] # Prefix for managers to command the bot
 DISCORD_TOKEN = os.environ['DISCORD_TOKEN'] # Stored in secrets
@@ -45,42 +40,30 @@ IRIE_GUILD_ID = int(os.environ['IRIE_GUILD_ID']) # Stored in secrets
 async def on_ready(): # When ready
 	# Pull in global variables (guild and channels)
 	# TODO1: Update to dict[guild_name][channel][channel_id]
-	global pc_vc
 	global vc
 	global irie_guild
-	global rules_channel
-	global actions_rules_channel
-	global links_channel
 	global bot_channel
 	global tester_channel
 	global voice_channel
-	global irie_podcast_channel
 	global gfyh_podcast_channel
-
+	
 	# Load then print each object
 	# TODO2: Update channel IDs to TODO1's dict[guild_name][channel][channel_id]
 	# TODO3: Define function to call, enumerate thru TODO1's dict and load objects     
-	irie_guild = client.get_guild(IRIE_GUILD_ID)
-	print(irie_guild)
-	rules_channel = irie_guild.get_channel(int(db["rules_channel_id"]))
-	print(rules_channel)
-	actions_rules_channel = irie_guild.get_channel(int(db["actions_rules_channel_id"]))
-	print(actions_rules_channel)
-	links_channel = irie_guild.get_channel(int(db["links_channel_id"]))
-	print(links_channel)
-	bot_channel = irie_guild.get_channel(int(db["bot_channel"]))
-	print(bot_channel)
-	tester_channel = irie_guild.get_channel(int(db["tester_channel_id"]))
-	print(tester_channel)
-	voice_channel = irie_guild.get_channel(int(db["voice_channel_id"]))
-	print(voice_channel)
-	irie_podcast_channel = irie_guild.get_channel(int(db["irie_podcast_channel_id"]))
-	print(irie_podcast_channel)
-	gfyh_podcast_channel = irie_guild.get_channel(int(db["gfyh_podcast_channel_id"]))
-	print(gfyh_podcast_channel)
+	
 	print(rastabot.update_all())
+	irie_guild = client.get_guild(IRIE_GUILD_ID)
+	print('irie_guild {}'.format(irie_guild))
+	bot_channel = irie_guild.get_channel(int(db["bot_channel"]))
+	print('bot_channel {}'.format(bot_channel))
+	tester_channel = irie_guild.get_channel(int(db["tester_channel_id"]))
+	print('tester_channel {}'.format(tester_channel))
+	voice_channel = irie_guild.get_channel(int(db["voice_channel_id"]))
+	print('voice_channel {}'.format(voice_channel))
+	gfyh_podcast_channel = irie_guild.get_channel(int(db["gfyh_podcast_channel_id"]))
+	print('gfyh_podcast_channel {}'.format(gfyh_podcast_channel))
 	print('We have logged in as {0.user}'.format(client))
-
+	
 	# Check if the bot is waking up from a kill, and if so print information
 	# TODO4: Update to rastabot.py function. Function should alert bot_channel
 	#        and write a file to the local directory
@@ -90,17 +73,23 @@ async def on_ready(): # When ready
 	# Print to the console
 	if was_killed:
 		print('*' * 35)
+		await bot_channel.send('*' * 35)
 		print('SYSTEM RECOVERED FROM KILL COMMAND')
+		await bot_channel.send('SYSTEM RECOVERED FROM KILL COMMAND')
 		print('System kill issued by {}'.format(killed_by))
-		# Cleanup - can fail if backend failure caused the initial !kill
+		await bot_channel.send('System kill issued by {}'.format(killed_by))
 		try:
 			db["system_killed"] = bool(False)
 			db["system_killed_by"] = ''
 			print('Database successfully updated')
+			await bot_channel.send('Database successfully updated')
 			print('System reset')
+			await bot_channel.send('System reset')
 		except:
 			print('Error updating database!')
+			await bot_channel.send('Error updating database!')
 		print('*' * 35)
+		await bot_channel.send('*' * 35)
 
 #*****************************************************#
 #               Member Join Processing:               #
@@ -116,14 +105,12 @@ async def on_ready(): # When ready
 async def on_member_join(member):
 	count.members()
 
-	print('{} joined the server'.format(member))
+	print('{} joined the server'.format(member.name))
 	welcomed_members = db["welcomed_members"] # Find out who we welcomed
 
 	if int(member.id) in welcomed_members: # Don't welcome people a second time
 		return
 	else:
-		rules_dm = str(db["rules_dm"])
-		await member.send(rules_dm.format(member.name, REQUEST_PREFIX)) # Send them a DM
 		channel = irie_guild.system_channel
 		season = db["season"]
 		reply = welcome_messages.get_message(season) # Get a semi-random welcome message
@@ -194,7 +181,9 @@ async def on_raw_reaction_remove(payload):
 	# Reaction removal doesn't provide the member object, so we pull in user_id.
 	user_id = int(payload.user_id)
 	message_id = str(payload.message_id)
+
 	member = irie_guild.get_member(user_id)
+	
 
 	# Custom emoji's get processed as a text string. Basic emoji's are supported as-is.
 	if payload.emoji.is_custom_emoji():
@@ -240,7 +229,7 @@ async def on_message(message): # On every message
 	if message.author == client.user: # Cancel own message
 		return
 
-	if message.content.lower().startswith('rbping'): # Simple test the bot is working
+	if message.content.lower().startswith('ping?'): # Simple test the bot is working
 		print('rbping?/pong! processed from {}, {}'.format(message.author, client.latency))
 		await message.channel.send('pong!')
 
@@ -264,8 +253,8 @@ async def on_message(message): # On every message
 	if str(message.channel.type) == 'private':
 		member = irie_guild.get_member(message.author.id)
 		channel = member
-		print('DM from: {}'.format(member))
-		print('Message: {}'.format(message.clean_content))
+		await bot_channel.send('DM from: {}'.format(member))
+		await bot_channel.send('Message: {}'.format(message.clean_content))
 	else:
 		member = message.author
 		channel = message.channel
@@ -293,14 +282,7 @@ async def on_message(message): # On every message
 		# before the bot did. This will prevent us from welcoming them if they leave/join
 
 	#TODO: Break out into rastabot_config
-	bot_manager = False
-	if message.content.startswith('{}'.format(COMMAND_PREFIX)):
-		for id in member.roles:
-			if id == irie_guild.get_role(int(db["bot_manager_id"])):
-				bot_manager = True
-	
-	if message.content.startswith('{}'.format(COMMAND_PREFIX)) and str(message.author) == 'Trolan#7880':
-		bot_manager = True
+	bot_manager = rastabot.check_bot_manager(member, irie_guild.get_role(int(db["bot_manager_id"])))
 
 	# TODO: bad_words.check_message(message) return reply
 	# You can't filter bad_words from commands and be able to add/remove bad_words with commands
@@ -334,29 +316,7 @@ async def on_message(message): # On every message
 			for i in range(len(about_msg)):
 	 			if about_msg[i] is not None:
 	 				await channel.send(about_msg[i])
-		
-		if message.content.startswith('{}rules'.format(REQUEST_PREFIX)):
-			print('{}rules request received from {}'.format(REQUEST_PREFIX, member))
-			rules_msg_id = db["rules_message_id"]
-			rules_msg = await rules_channel.fetch_message(rules_msg_id)
-			await member.send(rules_msg.content)
-			await channel.send('{}, you can find the rules in the {} channel and I\'ve sent them as a DM as well. Let the mods know if you need any help or have questions.'.format(member.mention, rules_channel.mention))
-
-		if (message.content.startswith('{}'.format(REQUEST_PREFIX))) and ((message.content.find('action') != -1 or message.content.find('waffle') != -1) and message.content.find('rule') != -1):
-			print('{}action/waffle_rules request received from {}'.format(REQUEST_PREFIX, member))
-			actions_rules_msg_id = db["actions_rules_message_id"]
-			actions_rules_msg = await actions_rules_channel.fetch_message(actions_rules_msg_id)
-			await member.send(actions_rules_msg.content)
-			await channel.send('{}, rules for actions and waffles can be found in the {} channel and I\'ve sent them as a DM as well. Let the mods know if you need any help or have questions.'.format(member.mention, actions_rules_channel.mention))
 			
-			
-		if message.content.startswith('{}links'.format(REQUEST_PREFIX)):
-			print('{}links request received from {}'.format(REQUEST_PREFIX, member))
-			links_msg_id = db["links_message_id"]
-			links_msg = await links_channel.fetch_message(links_msg_id)
-			await member.send(links_msg.content)
-			await channel.send('{}, I sent you a copy of the links from {}. Let us know if something should be added!'.format(member.mention, links_channel.mention))
-
 		if message.content.startswith('{}tester'.format(REQUEST_PREFIX)):
 			try:
 				tester_id = int(message.content[11:29])
@@ -371,45 +331,6 @@ async def on_message(message): # On every message
 
 		if message.content.startswith('{}dab'.format(REQUEST_PREFIX)):
 
-			if ((message.channel.id == int(db["podcast_text_chanel_id"])) or (message.channel.id == int(db["hempire_text_channel_id"]))):
-
-				admin = False
-				for id in member.roles:
-					if id == irie_guild.get_role(int(db["irie_admin_id"])):
-						admin = True
-				if not admin:
-					return		
-
-				global pc_vc
-				global vc
-				try:
-					if(vc.is_playing() or vc.is_connected()):
-						vc.disconnect()
-				except:
-					print('No other VoiceClients active.')
-				try:
-					pc_vc = await irie_podcast_channel.connect()
-				except:
-					await pc_vc.disconnect()
-				print('Connecting to {}...'.format(irie_podcast_channel.name))
-				connect_time = 0.0
-				while(pc_vc.average_latency == float('inf')):
-					connect_time += 0.5
-					await asyncio.sleep(0.5)
-				print('Connected to {} after {}sec with latency of {}'.format(irie_podcast_channel.name, connect_time, pc_vc.average_latency))
-				try:
-					pc_vc.play(discord.FFmpegPCMAudio('dabtime.mp3'))
-					print('Playing dabtime.mp3 with latency of {}'.format(pc_vc.average_latency))
-					pc_vc.source = discord.PCMVolumeTransformer(pc_vc.source, volume=0.35)
-					while(pc_vc.is_playing()):
-						await asyncio.sleep(0.5)
-						continue
-					print('Done playing dabtime.mp3 with latency of {}'.format(pc_vc.average_latency))
-					await pc_vc.disconnect()
-					return
-				except:
-					await pc_vc.disconnect()
-					return
 			if (message.channel.id != (int(db["voice_text_channel_id"]))):
 					text_channel = irie_guild.get_channel(int(db["voice_text_channel_id"]))
 					await message.channel.send('{}dab only usable in {}'.format(REQUEST_PREFIX, text_channel.mention))
@@ -430,7 +351,6 @@ async def on_message(message): # On every message
 					await message.channel.send('Not a bad idea {}...'.format(message.author.mention))
 
 				print('{}dab issued by {}'.format(REQUEST_PREFIX, message.author))
-
 
 				#global vc 
 				try:
@@ -461,8 +381,7 @@ async def on_message(message): # On every message
 				except:
 					await vc.disconnect()
 					rastabot.start_dab_timer()
-
-
+	
 	if message.content.startswith(COMMAND_PREFIX): # All commands for the bot			
 		if bot_manager == False:
 			print('{} command attempted by {}'.format(COMMAND_PREFIX, member))
@@ -517,23 +436,6 @@ async def on_message(message): # On every message
 				print('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
 				await channel.send('Deleted {}: {} from {}'.format(index_to_delete, deleted_welcome_message, current_season))
 
-			if message.content.startswith('{}update_rules_message'.format(COMMAND_PREFIX)):
-				split_message = message.content.split()
-				if len(split_message) != 2:
-					await channel.send('Usage: {}update_rules_message [msg_id]'.format(COMMAND_PREFIX))
-					return
-				msg_id = int(split_message[1])
-				new_rules_message = await rules_channel.fetch_message(msg_id)
-				reply = rules_messages.update_message(new_rules_message)
-				await channel.send(reply)
-
-			if message.content.startswith('{}update_rules_dm'.format(COMMAND_PREFIX)):
-				split_message = message.content.split()
-				new_rules_dm = split_message[1:]
-				new_rules_dm = ' '.join(new_rules_dm)
-				reply = rules_messages.update_dm(new_rules_dm)
-				await channel.send(reply)
-
 			if message.content.startswith('{}keys'.format(COMMAND_PREFIX)):
 				keys = db.keys()
 				print(keys)
@@ -542,31 +444,6 @@ async def on_message(message): # On every message
 			if message.content.startswith('{}clear_welcomed_members'.format(COMMAND_PREFIX)):
 				welcomed_members = ['']
 				db["welcomed_members"] = welcomed_members
-				await channel.send('Done')
-
-			if message.content.startswith('{}new_action_message_id'.format(COMMAND_PREFIX)):
-				#TODO: REMOVE
-				split_message = message.content.split()
-				new_message_id = int(split_message[1])
-				db["action_reaction_message"] = int(new_message_id)
-				await channel.send('Done')
-
-			if message.content.startswith('{}new_rules_message_id'.format(COMMAND_PREFIX)):
-				split_message = message.content.split()
-				new_message_id = int(split_message[1])
-				db["rules_message_id"] = int(new_message_id)
-				await channel.send('Done')
-
-			if message.content.startswith('{}new_actions_rules_message_id'.format(COMMAND_PREFIX)):
-				split_message = message.content.split()
-				new_message_id = int(split_message[1])
-				db["actions_rules_message_id"] = int(new_message_id)
-				await channel.send('Done')
-
-			if message.content.startswith('{}new_links_message_id'.format(COMMAND_PREFIX)):
-				split_message = message.content.split()
-				new_message_id = int(split_message[1])
-				db["links_message_id"] = int(new_message_id)
 				await channel.send('Done')
 
 			if message.content.startswith('{}db_update'.format(COMMAND_PREFIX)):
@@ -650,9 +527,9 @@ async def on_message(message): # On every message
 				emoji = split_message[2]
 				role_id = split_message[3]
 				db_dict = db["role_reaction_message_list"]
-
-				if len(emoji) > 1:
-					emoji_id = emoji_id = str(emoji[2:emoji.rfind(':')])
+	
+				if emoji.count(':'):
+					emoji_id = str(emoji[2:emoji.rfind(':')])
 				else:
 					emoji_id = emoji
 
@@ -667,7 +544,6 @@ async def on_message(message): # On every message
 					db_dict[msg_id].update({emoji_id:role_id})
 					await channel.send('Added {}:{} to {}'.format(emoji_id, role_id, msg_id))
 				db["role_reaction_message_list"] = db_dict
-
 				await channel.send('Role reactions available for message {}'.format(msg_id))
 				for emoji in db_dict[msg_id]:
 					await channel.send('Emoji {e} gives you the {r} role (Role ID: {ri})'.format(e = emoji, r = irie_guild.get_role(int(db_dict[msg_id][emoji])), ri = db_dict[msg_id][emoji]))
@@ -717,23 +593,13 @@ async def on_message(message): # On every message
 				for emoji in db_dict[msg_id]:
 					await channel.send('Emoji {e} gives you the {r} role (Role ID: {ri})'.format(e = emoji, r = irie_guild.get_role(int(db_dict[msg_id][emoji])), ri = db_dict[msg_id][emoji]))
 			
-			if message.content.startswith('{}new_status'.format(COMMAND_PREFIX)):
-				if message.content[12:15].isdigit():
-					number = message.content[12:15]
-					new_url = message.content[16:]
-					db["podcast status"] = 1
-					db["gfyh number"] = number
-					db["gfyh url"] = new_url
-					await client.change_presence(activity=discord.Activity(type=discord.ActivityType.streaming, name='GFYH Podcast #{}'.format(number), url=new_url))
-					await channel.send('Updated status for podcast {} at {}'.format(number, new_url))
-				elif message.content[12:].startswith('clear'):
-					print('CLEAR COMMAND')
-					await client.change_presence(status=None)
-					db["auto status"] = 0
-					db["podcast status"] = 0
-					db["gfyh number"] = 0
-					db["gfyh url"] = ''
-					await channel.send('Status cleared, auto status disabled.')
+			if message.content.startswith('{}clear_status'.format(COMMAND_PREFIX)):
+				await client.change_presence(status=None)
+				db["auto status"] = 0
+				db["podcast status"] = 0
+				db["gfyh number"] = 0
+				db["gfyh url"] = ''
+				await channel.send('Status cleared, auto status disabled.')
 
 			if message.content.startswith('{}auto_status'.format(COMMAND_PREFIX)):
 				db["auto status"] = 1
@@ -766,14 +632,7 @@ async def on_message(message): # On every message
 					await message.channel.send('{} seconds remaining'.format(remaining))
 				else:
 					await message.channel.send('No active timer')
-					
-			if message.content.startswith('{}clear_dab_timer'.format(COMMAND_PREFIX)):	
-				remaining = await rastabot.clear_dab_timer()
 
-				if remaining == 0:
-					await message.channel.send('Timer cleared')
-				else:
-					await message.channel.send('Issue clearing timer')
 
 			if message.content.startswith('{}start_dab_timer'.format(COMMAND_PREFIX)):	
 				rastabot.start_dab_timer()
