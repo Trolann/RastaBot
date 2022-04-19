@@ -352,12 +352,6 @@ async def on_message(message): # On every message
 
 				print('{}dab issued by {}'.format(REQUEST_PREFIX, message.author))
 
-				#global vc 
-				try:
-					if(pc_vc.is_playing() or pc_vc.is_connected()):
-						return
-				except:
-					print('No other VoiceClients active.')
 				try:
 					vc = await voice_channel.connect()
 				except:
