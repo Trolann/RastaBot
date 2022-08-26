@@ -2,12 +2,18 @@ import os
 import sqlite3
 from time import sleep
 from os import environ
+global dev_instance
+try:
+    dev_instance = bool(environ['DEV_INSTANCE'])
+except KeyError:
+    dev_instance = True
 
 
-def remove(db, table, value, commit_to_db=True):
+def remove(db, table, option, get_dev = False, commit_to_db=True):
+    option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    sql = "DELETE FROM {} WHERE option = '{}'".format(table, value)
+    sql = "DELETE FROM {} WHERE option = '{}'".format(table, option)
     try:
         cursor.execute(sql)
     except sqlite3.OperationalError:
@@ -18,7 +24,8 @@ def remove(db, table, value, commit_to_db=True):
     cursor.close()
 
 
-def remove_like_value(db, table, option_like, value_like, commit_to_db=True):
+def remove_like_value(db, table, option_like, value_like, get_dev = False,  commit_to_db=True):
+    option = 'dev_' + option_like if get_dev else option_like
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     sql = "DELETE FROM {} WHERE option = '{}' AND value LIKE '%{}%'".format(table, option_like, value_like)
@@ -32,10 +39,11 @@ def remove_like_value(db, table, option_like, value_like, commit_to_db=True):
     cursor.close()
 
 
-def insert(db, table, item, value, commit_to_db = True):
+def insert(db, table, option, value, get_dev = False, commit_to_db = True):
+    option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    to_insert = (item, value)
+    to_insert = (option, value)
     sql = 'INSERT OR REPLACE INTO {} VALUES {}'.format(table, to_insert)
     try:
         cursor.execute(sql)
@@ -48,7 +56,8 @@ def insert(db, table, item, value, commit_to_db = True):
     connection.close()
 
 
-def get_value(db, table, option):
+def get_value(db, table, option, get_dev = False):
+    option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     cursor.execute('SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option))
@@ -58,10 +67,10 @@ def get_value(db, table, option):
     return rows[0][0] if rows else 0
 
 
-def select_from_table(db, table, option):
+def select_from_table(db, table, option, get_dev = False):
+    option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-
     cursor.execute('SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option))
     rows = cursor.fetchall()
     values = []
@@ -79,24 +88,21 @@ class ConfigDB:
         self.tester_table = 'testers'
         self.request_prefix = get_value(self._rastadb, self.table, 'request_prefix')
         self.command_prefix = get_value(self._rastadb, self.table, 'command_prefix')
-        self.bot_manager_id = int(get_value(self._rastadb, self.table, 'bot_manager_id'))
+        self.bot_manager_id = int(get_value(self._rastadb, self.table, 'bot_manager_id', get_dev = True))
         self.heartbeat_url = self.get_heartbeat('url')
         self.heartbeat_api = self.get_heartbeat('api')
 
         self.system_killed_by = get_value(self._rastadb, self.table, 'system_killed_by')
         self.system_killed = False if self.system_killed_by == 'None' or '' else True
 
-        self.bot_channel_id = int(get_value(self._rastadb, self.table, 'bot_channel_id'))
-        self.tester_channel_id = int(get_value(self._rastadb, self.table, 'tester_channel_id'))
+        self.bot_channel_id = int(get_value(self._rastadb, self.table, 'bot_channel_id', get_dev = True))
+        self.tester_channel_id = int(get_value(self._rastadb, self.table, 'tester_channel_id', get_dev = True))
 
-        self.about = get_value(self._rastadb, self.table, 'about')
+        self.about = get_value(self._rastadb, self.table, 'about', get_dev = True)
 
     def get_heartbeat(self, value):
         value = 'heartbeat_' + value
-        if os.environ['DEV_INSTANCE']:
-            value = 'dev_' + value
-        return get_value(self._rastadb, self.table, value)
-
+        return get_value(self._rastadb, self.table, value, get_dev = True)
 
     def update_killed(self, by = ''):
         item = 'system_killed_by'
@@ -104,7 +110,7 @@ class ConfigDB:
         insert(self._rastadb, self.table, item, option)
 
     def get_tester_message(self):
-        return get_value(self._rastadb, self.tester_table, 'tester_message')
+        return get_value(self._rastadb, self.tester_table, 'tester_message', get_dev = True)
 
     def get_tester_members(self):
         rows = select_from_table(self._rastadb, self.tester_table, 'member_id')
@@ -115,16 +121,17 @@ class ConfigDB:
 
     def update_count(self, counter, value):
         item = counter + '_count'
-        insert(self._rastadb, self.table, item, value)
+        insert(self._rastadb, self.table, item, value, get_dev = True)
 
     def add_tester(self, tester_id):
         item = 'member_id'
-        insert(self._rastadb, self.tester_table, item, tester_id)
+        insert(self._rastadb, self.tester_table, item, tester_id, get_dev = True)
 
     def clear_tester(self):
+        option = 'dev_member_id' if dev_instance else 'member_id'
         conn = sqlite3.connect(self._rastadb)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM {} WHERE option = 'member_id'".format(self.tester_table))
+        cursor.execute("DELETE FROM {} WHERE option = '{}'".format(self.tester_table, option))
         conn.commit()
         cursor.close()
         conn.close()
@@ -133,12 +140,12 @@ class ConfigDB:
 
     def update_tester_message(self, tester_message):
         item = 'tester_message'
-        remove(self._rastadb, self.tester_table, item)
-        insert(self._rastadb, self.tester_table, item, tester_message)
+        remove(self._rastadb, self.tester_table, item, get_dev = True)
+        insert(self._rastadb, self.tester_table, item, tester_message, get_dev = True)
 
     def get_count(self, counter):
         item = counter + '_count'
-        return int(get_value(self._rastadb, self.table, item))
+        return int(get_value(self._rastadb, self.table, item, get_dev = True))
 
 
 class WelcomeDB:
@@ -148,7 +155,7 @@ class WelcomeDB:
         self.members_table = 'welcomed_members'
 
     def get_messages(self):
-        return select_from_table(self._rastadb, self.table, 'welcome_message')
+        return select_from_table(self._rastadb, self.table, 'welcome_message', get_dev = True)
 
     def not_welcomed(self, member_id):
         connection = sqlite3.connect(self._rastadb)
@@ -161,17 +168,19 @@ class WelcomeDB:
         
     def new_message(self, new_message):
         item = 'welcome_message'
-        insert(self._rastadb, self.table, item, new_message)
+        insert(self._rastadb, self.table, item, new_message, get_dev = True)
 
     def add_member(self, member):
         item, option = ('member_id', member)
-        insert(self._rastadb, self.members_table, item, option)
+        insert(self._rastadb, self.members_table, item, option, get_dev = True)
 
     def clear_welcomed_members(self):
+        option = 'dev_member_id' if dev_instance else 'member_id'
         conn = sqlite3.connect(self._rastadb)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM {} WHERE option = 'member_id'".format(self.members_table))
-        insert(self.members_table, 'member_id', 1234)
+        cursor.execute("DELETE FROM {} WHERE option = '{}'".format(self.members_table, option))
+        insert(self.members_table, option, 1234)
+        insert(self.members_table, option, 5678)
         conn.commit()
         cursor.close()
         conn.close()
@@ -181,14 +190,14 @@ class PodcastDB:
     def __init__(self):
         self._rastadb = 'rastabot.db'
         self.table = 'podcast'
-        self.podcast_channel_id = int(get_value(self._rastadb, self.table, 'irie_podcast_channel_id'))
+        self.podcast_channel_id = int(get_value(self._rastadb, self.table, 'irie_podcast_channel_id', get_dev = True))
 
     def get_auto_status(self):
         return bool(get_value(self._rastadb, self.table, 'auto_status'))
 
     def get_current(self, value):
         item = 'current_' + value
-        row = get_value(self._rastadb, self.table, item)
+        row = get_value(self._rastadb, self.table, item, get_dev = True)
         return row if 'num' not in value else int(row)
 
     def new_podcast(self, num, title, url):
@@ -196,7 +205,7 @@ class PodcastDB:
         t = ('current_title', title)
         u = ('current_url', url)
         for item, option in (n, t, u):
-            insert(self._rastadb, self.table, item, option)
+            insert(self._rastadb, self.table, item, option, get_dev = True)
 
 
 class WordFilterDB:
@@ -264,18 +273,18 @@ class SoundsDB:
         self._rastadb = 'rastabot.db'
         self.table = 'sounds'
         self.dab_cooldown_length = int(get_value(self._rastadb, self.table, 'dab_cooldown_length'))
-        self.dab_text_channel_id = int(get_value(self._rastadb, self.table, 'dab_text_channel_id'))
-        self.dab_voice_channel_id = int(get_value(self._rastadb, self.table, 'dab_voice_channel_id'))
-        self.dab_delay_seconds = int(get_value(self._rastadb, self.table, 'dab_delay_seconds'))
+        self.dab_text_channel_id = int(get_value(self._rastadb, self.table, 'dab_text_channel_id', get_dev = True))
+        self.dab_voice_channel_id = int(get_value(self._rastadb, self.table, 'dab_voice_channel_id', get_dev = True))
+        self.dab_delay_seconds = int(get_value(self._rastadb, self.table, 'dab_delay_seconds', get_dev = True))
 
     def check_dab_timer(self):
-        return int(round(float(get_value(self._rastadb, self.table, 'dab_timer_expires'))))
+        return int(round(float(get_value(self._rastadb, self.table, 'dab_timer_expires', get_dev = True))))
 
     def start_dab_timer(self, time):
-        insert(self._rastadb, self.table, 'dab_timer_expires', time)
+        insert(self._rastadb, self.table, 'dab_timer_expires', time, get_dev = True)
 
     def clear_dab_timer(self):
-        insert(self._rastadb, self.table, 'dab_timer_expires', 0)
+        insert(self._rastadb, self.table, 'dab_timer_expires', 0, get_dev = True)
 
 
 class DealCatcherDB:
@@ -285,8 +294,8 @@ class DealCatcherDB:
         self.expired_table = 'deals_expired'
         self.new_table = 'deals_new'
         self.separator = '||'
-        self.dc_daemon_delay_minutes = int(get_value(self._rastadb, self.table, 'dc_daemon_delay_minutes'))
-        self.iriedirect_channel_id = int(get_value(self._rastadb, self.table, 'i_direct_channel_id'))
+        self.dc_daemon_delay_minutes = int(get_value(self._rastadb, self.table, 'dc_daemon_delay_minutes', get_dev = True))
+        self.iriedirect_channel_id = int(get_value(self._rastadb, self.table, 'i_direct_channel_id', get_dev = True))
 
     def get_vendors(self):
         vendor_list = list(select_from_table(self._rastadb, self.table, 'vendor'))

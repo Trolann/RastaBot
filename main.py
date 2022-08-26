@@ -173,7 +173,7 @@ async def on_message(message):  # On every message
 		try:
 			await process_command(client, irie_guild, message, member, channel)
 		except AttributeError:
-			print('AttributeError | {}'.format(channel.fetch_message(message.id)))
+			print('AttributeError | {}'.format(await channel.fetch_message(message.id)))
 		return
 
 

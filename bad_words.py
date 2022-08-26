@@ -12,6 +12,7 @@ def list_bad_words():
     """Return a string of formatted bad words from the db"""
     bad_words = ''
     for word in wordfilter_db.get_list('bad'):
+        print(', \'{}\''.format(word), end = '')
         bad_words += '{}, '.format(word)
     reply = 'Bad words: {}'.format(bad_words[:-2])
     return reply
