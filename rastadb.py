@@ -10,7 +10,7 @@ except KeyError:
 
 
 def remove(db, table, option, get_dev = False, commit_to_db=True):
-    option = 'dev_' + option if get_dev else option
+    option = 'dev_' + option if get_dev and dev_instance else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     if get_dev:
@@ -28,7 +28,7 @@ def remove(db, table, option, get_dev = False, commit_to_db=True):
 
 
 def remove_like_value(db, table, option_like, value_like, get_dev = False,  commit_to_db=True):
-    option = 'dev_' + option_like if get_dev else option_like
+    option = 'dev_' + option_like if get_dev and dev_instance else option_like
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     if get_dev:
@@ -46,7 +46,7 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
 
 
 def insert(db, table, option, value, get_dev = False, commit_to_db = True):
-    option = 'dev_' + option if get_dev else option
+    option = 'dev_' + option if get_dev and dev_instance else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     to_insert = (option, value)
@@ -63,7 +63,7 @@ def insert(db, table, option, value, get_dev = False, commit_to_db = True):
 
 
 def get_value(db, table, option, get_dev = False):
-    option = 'dev_' + option if get_dev else option
+    option = 'dev_' + option if get_dev and dev_instance else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     if get_dev:
@@ -78,7 +78,7 @@ def get_value(db, table, option, get_dev = False):
 
 
 def select_from_table(db, table, option, get_dev = False):
-    option = 'dev_' + option if get_dev else option
+    option = 'dev_' + option if get_dev and dev_instance else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     if get_dev:
