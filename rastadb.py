@@ -81,7 +81,7 @@ class ConfigDB:
         self.command_prefix = get_value(self._rastadb, self.table, 'command_prefix')
         self.bot_manager_id = int(get_value(self._rastadb, self.table, 'bot_manager_id'))
         self.heartbeat_url = self.get_heartbeat('url')
-        self.heartbeal_api = self.get_heartbeat('api')
+        self.heartbeat_api = self.get_heartbeat('api')
 
         self.system_killed_by = get_value(self._rastadb, self.table, 'system_killed_by')
         self.system_killed = False if self.system_killed_by == 'None' or '' else True
