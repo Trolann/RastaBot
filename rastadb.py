@@ -13,7 +13,10 @@ def remove(db, table, option, get_dev = False, commit_to_db=True):
     option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    sql = "DELETE FROM {} WHERE option = '{}'".format(table, option)
+    if get_dev:
+        sql = "DELETE FROM {} WHERE option = '{}'".format(table, option)
+    else:
+        sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\'".format(table, option)
     try:
         cursor.execute(sql)
     except sqlite3.OperationalError:
@@ -28,7 +31,10 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
     option = 'dev_' + option_like if get_dev else option_like
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    sql = "DELETE FROM {} WHERE option = '{}' AND value LIKE '%{}%'".format(table, option_like, value_like)
+    if get_dev:
+        sql = "DELETE FROM {} WHERE option = '{}' AND value LIKE '%{}%'".format(table, option_like, value_like)
+    else:
+        sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\' AND value LIKE '%{}%'".format(table, option_like, value_like)
     try:
         cursor.execute(sql)
     except sqlite3.OperationalError:
@@ -63,7 +69,7 @@ def get_value(db, table, option, get_dev = False):
     if get_dev:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
     else:
-        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND NOT LIKE \'dev_%\''.format(table, option)
+        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'%dev_%\''.format(table, option)
     cursor.execute(sql)
     rows = cursor.fetchall()
     cursor.close()
@@ -75,7 +81,11 @@ def select_from_table(db, table, option, get_dev = False):
     option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    cursor.execute('SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option))
+    if get_dev:
+        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
+    else:
+        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'dev_%\''.format(table, option)
+    cursor.execute(sql)
     rows = cursor.fetchall()
     values = []
     for _value in rows:
