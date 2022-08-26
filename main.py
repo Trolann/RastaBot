@@ -2,7 +2,7 @@
 RastaBot developed by Trolan (Trevor Mathisen). 
 """
 # Core requirements
-from rastadb import config_db, welcome_db
+from rastadb import config_db
 import discord
 import count
 from os import environ as os_environ
