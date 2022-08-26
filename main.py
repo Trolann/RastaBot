@@ -184,4 +184,4 @@ try:
 except:
 	# Fails for discord banning this IP range, get a new container and IP block
 	from os import system as os_system
-	get_site(os_environ['HEARTBEAT_API_URL'])
+	get_site(config_db.heartbeat_api)

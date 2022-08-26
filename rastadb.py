@@ -1,5 +1,7 @@
+import os
 import sqlite3
 from time import sleep
+from os import environ
 
 
 def remove(db, table, value, commit_to_db=True):
@@ -78,6 +80,8 @@ class ConfigDB:
         self.request_prefix = get_value(self._rastadb, self.table, 'request_prefix')
         self.command_prefix = get_value(self._rastadb, self.table, 'command_prefix')
         self.bot_manager_id = int(get_value(self._rastadb, self.table, 'bot_manager_id'))
+        self.heartbeat_url = self.get_heartbeat('url')
+        self.heartbeal_api = self.get_heartbeat('api')
 
         self.system_killed_by = get_value(self._rastadb, self.table, 'system_killed_by')
         self.system_killed = False if self.system_killed_by == 'None' or '' else True
@@ -86,6 +90,13 @@ class ConfigDB:
         self.tester_channel_id = int(get_value(self._rastadb, self.table, 'tester_channel_id'))
 
         self.about = get_value(self._rastadb, self.table, 'about')
+
+    def get_heartbeat(self, value):
+        value = 'heartbeat_' + value
+        if os.environ['DEV_INSTANCE']:
+            value = 'dev_' + value
+         return get_value(self._rastadb, self.table, value)
+
 
     def update_killed(self, by = ''):
         item = 'system_killed_by'

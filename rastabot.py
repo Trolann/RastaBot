@@ -23,10 +23,9 @@ COMMAND_PREFIX = config_db.command_prefix  # Prefix for managers to command the 
 
 def heartbeat_daemon(delay, loop):
     # TODO: Add environment variable to RastaBot (Replit)
-    heartbeat_url = os.environ['HEARTBEAT_URL']
-    get_site(heartbeat_url)
+    get_site(config_db.heartbeat_url)
     while loop:
-        get_site(heartbeat_url)
+        get_site(config_db.heartbeat_url)
         sleep(delay)
 
 
