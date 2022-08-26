@@ -2,7 +2,7 @@ from rastadb import config_db, podcast_db
 import os
 import requests
 import re
-from discord import Activity, ActivityType
+from discord import Streaming, Status
 
 
 def get_image(url):
@@ -30,23 +30,22 @@ def check_new():
 		return None, None, None
 	url = 'https://www.youtube.com/watch?v={}'.format(html[index:index + 11])
 	number = int(title[1:4])
+	new = True if number > podcast_db.get_current('number') else False
 
-	if number <= int(podcast_db.get_current('number')):
-		return None, None, None
-
-	return title, url, number
+	return title, url, number, new
 
 
 async def auto_status(client, irie_guild):
 	if podcast_db.get_auto_status():
-		name, url, num = check_new()
-		if num:
+		name, url, num, new = check_new()
+		if new:
 			podcast_db.new_podcast(num, name, url)
 			bot_channel = irie_guild.get_channel(config_db.bot_channel_id)
 			gfyh_podcast_channel = irie_guild.get_channel(podcast_db.podcast_channel_id)
 			await bot_channel.send('Found a new podcast. Updating')
 			await gfyh_podcast_channel.send("Episode {} of the Grow From Your Heart ({}) podcast has been posted! \n {}".format(num, name, url))
 			print('New podcast found: {} at {}'.format(num, url))
-		await client.change_presence(activity = Activity(type = ActivityType.streaming, name='GFYH Podcast #{}'.format(num, url=url)))
+		stream = Streaming(url = url, name = 'GFYH Podcast #{}'.format(num), platform = 'YouTube')
+		await client.change_presence(status=Status.online, activity=stream)
 
 print('Loaded podcast.py')
