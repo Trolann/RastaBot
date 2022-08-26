@@ -60,6 +60,10 @@ def get_value(db, table, option, get_dev = False):
     option = 'dev_' + option if get_dev else option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
+    if get_dev:
+        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
+    else:
+        sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND NOT LIKE \'dev_%\''.format(table, option)
     cursor.execute('SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option))
     rows = cursor.fetchall()
     cursor.close()
