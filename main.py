@@ -119,6 +119,10 @@ async def on_message(message):  # On every message
 	if message.author == client.user:
 		return
 
+	# member and channel can change in DM's, this normalizes them
+	member, channel = await process_incoming_message(irie_guild, message)
+	message = await channel.fetch_message(int(message.id))
+
 	# Simple test the bot is working
 	if message.content.lower().startswith('ping?'):
 		print('{}'.format(message.content))
@@ -126,10 +130,6 @@ async def on_message(message):  # On every message
 		await message.channel.send('pong!')
 		heartbeat_daemon(1, False)
 		return
-
-	# member and channel can change in DM's, this normalizes them
-	member, channel = await process_incoming_message(irie_guild, message)
-	message = await channel.fetch_message(int(message.id))
 
 	# Check messages and perform tasks
 	await podcast_auto_status(client, irie_guild)

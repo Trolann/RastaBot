@@ -107,7 +107,7 @@ async def process_incoming_message(irie_guild, message):
 
     # Catchall for User type bots (RastaBot) defaults to Bot ID
     if 'bot' in str(message.author).lower():
-        member = irie_guild.get_member_named('RastaBot')
+        member = irie_guild.get_member_named('Trolan')
         channel = message.channel
         return member, channel
 
