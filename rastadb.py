@@ -4,16 +4,20 @@ from time import sleep
 from os import environ
 global dev_instance
 try:
-    dev_instance = bool(environ['DEV_INSTANCE'])
+    dev_instance = bool(int(environ['DEV_INSTANCE']))
+    print('got from environ')
 except KeyError:
+    print('sure didnt')
     dev_instance = True
 
-
+dev_instance = False
 def remove(db, table, option, get_dev = False, commit_to_db=True):
-    option = 'dev_' + option if dev_instance else option
+    global dev_instance
+    if dev_instance and get_dev:
+        option = 'dev_' + option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    if get_dev:
+    if dev_instance and get_dev:
         sql = "DELETE FROM {} WHERE option = '{}'".format(table, option)
     else:
         sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\'".format(table, option)
@@ -28,10 +32,12 @@ def remove(db, table, option, get_dev = False, commit_to_db=True):
 
 
 def remove_like_value(db, table, option_like, value_like, get_dev = False,  commit_to_db=True):
-    option = 'dev_' + option_like if dev_instance else option_like
+    global dev_instance
+    if dev_instance and get_dev:
+        option_like = 'dev_' + option_like
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    if get_dev:
+    if dev_instance and get_dev:
         sql = "DELETE FROM {} WHERE option = '{}' AND value LIKE '%{}%'".format(table, option_like, value_like)
     else:
         sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\' AND value LIKE '%{}%'".format(table, option_like, value_like)
@@ -46,7 +52,9 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
 
 
 def insert(db, table, option, value, get_dev = False, commit_to_db = True):
-    option = 'dev_' + option if dev_instance else option
+    global dev_instance
+    if dev_instance and get_dev:
+        option = 'dev_' + option
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     to_insert = (option, value)
@@ -63,10 +71,14 @@ def insert(db, table, option, value, get_dev = False, commit_to_db = True):
 
 
 def get_value(db, table, option, get_dev = False):
-    option = 'dev_' + option if dev_instance else option
+    global dev_instance
+
+    if dev_instance and get_dev:
+        option = 'dev_' + option
+
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    if get_dev:
+    if dev_instance and get_dev:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
     else:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'%dev_%\''.format(table, option)
@@ -78,10 +90,14 @@ def get_value(db, table, option, get_dev = False):
 
 
 def select_from_table(db, table, option, get_dev = False):
-    option = 'dev_' + option if dev_instance else option
+    global dev_instance
+
+    if dev_instance and get_dev:
+        option = 'dev_' + option
+
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    if get_dev:
+    if dev_instance and get_dev:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
     else:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'dev_%\''.format(table, option)

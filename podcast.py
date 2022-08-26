@@ -40,7 +40,9 @@ async def auto_status(client, irie_guild):
 		name, url, num, new = check_new()
 		if new:
 			podcast_db.new_podcast(num, name, url)
+			print('bot_channel_id {}'.format(config_db.bot_channel_id))
 			bot_channel = irie_guild.get_channel(config_db.bot_channel_id)
+			print('bot_channel {}'.format(bot_channel))
 			gfyh_podcast_channel = irie_guild.get_channel(podcast_db.podcast_channel_id)
 			await bot_channel.send('Found a new podcast. Updating')
 			await gfyh_podcast_channel.send("Episode {} of the Grow From Your Heart ({}) podcast has been posted! \n {}".format(num, name, url))

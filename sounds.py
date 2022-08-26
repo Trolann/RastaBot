@@ -44,9 +44,13 @@ async def start_dab_timer(channel = None):
 	timer_expire = current_epoch + sounds_db.dab_cooldown_length * 60
 	sounds_db.start_dab_timer(timer_expire)
 	
-	remaining = await check_dab_timer()
+	seconds_left = await check_dab_timer()
 	if channel:
-		await channel.send('Started. {} seconds remaining'.format(remaining))
+		minutes, seconds = divmod(seconds_left, 60)
+		hours, minutes = divmod(minutes, 60)
+		days, hours = divmod(hours, 24)
+		time_left = '{} hours, {} minutes'.format(hours, minutes) if hours else '{} minutes, {} seconds'.format(minutes, seconds)
+		await channel.send('{} remaining'.format(time_left))
 	
 	return True
 
