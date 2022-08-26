@@ -95,7 +95,7 @@ class ConfigDB:
         value = 'heartbeat_' + value
         if os.environ['DEV_INSTANCE']:
             value = 'dev_' + value
-         return get_value(self._rastadb, self.table, value)
+        return get_value(self._rastadb, self.table, value)
 
 
     def update_killed(self, by = ''):
