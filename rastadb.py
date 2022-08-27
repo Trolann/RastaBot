@@ -186,14 +186,14 @@ class WelcomeDB:
     def get_messages(self):
         return select_from_table(self._rastadb, self.table, 'welcome_message', get_dev = True)
 
-    def not_welcomed(self, member_id):
+    def welcomed(self, member_id):
         connection = sqlite3.connect(self._rastadb)
         cursor = connection.cursor()
         cursor.execute('SELECT value FROM {} WHERE value LIKE \'%{}%\''.format(self.members_table, member_id))
         rows = cursor.fetchall()
         cursor.close()
         connection.close()
-        return not bool(rows)
+        return bool(rows)
         
     def new_message(self, new_message):
         item = 'welcome_message'

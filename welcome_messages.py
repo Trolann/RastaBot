@@ -27,7 +27,8 @@ def new_message(welcome_message):
 
 
 async def welcome_member(irie_guild, member):
-	if welcome_db.not_welcomed(member.id):
+	welcomed = welcome_db.welcomed(member.id)
+	if not welcomed:
 		channel = irie_guild.system_channel
 		replies = welcome_db.get_messages()
 		welcome_db.add_member(member.id)
