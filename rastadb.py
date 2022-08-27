@@ -10,6 +10,12 @@ except KeyError:
     print('sure didnt')
     dev_instance = True
 
+global path
+try:
+    path = environ['PATH']
+except KeyError:
+    path = ''
+
 def remove(db, table, option, get_dev = False, commit_to_db=True):
     global dev_instance
     if dev_instance and get_dev:
@@ -112,7 +118,8 @@ def select_from_table(db, table, option, get_dev = False):
 
 class ConfigDB:
     def __init__(self):
-        self._rastadb = '/home/rastabot/rastabot.db'
+        global path
+        self._rastadb = 'rastabot.db'
         self.table = 'config'
         self.tester_table = 'testers'
         self.request_prefix = get_value(self._rastadb, self.table, 'request_prefix')
@@ -179,7 +186,8 @@ class ConfigDB:
 
 class WelcomeDB:
     def __init__(self):
-        self._rastadb = 'welcomed_members.db'
+        global path
+        self._rastadb = path + 'welcomed_members.db'
         self.table = 'welcome_messages'
         self.members_table = 'welcomed_members'
 
@@ -211,7 +219,8 @@ class WelcomeDB:
 
 class PodcastDB:
     def __init__(self):
-        self._rastadb = 'rastabot.db'
+        global path
+        self._rastadb = path + 'rastabot.db'
         self.table = 'podcast'
         self.podcast_channel_id = int(get_value(self._rastadb, self.table, 'irie_podcast_channel_id', get_dev = True))
 
@@ -233,7 +242,8 @@ class PodcastDB:
 
 class WordFilterDB:
     def __init__(self):
-        self._rastadb = 'rastabot.db'
+        global path
+        self._rastadb = path + 'rastabot.db'
         self.table = 'word_filter'
 
     def get_list(self, which_list):
@@ -249,7 +259,8 @@ class WordFilterDB:
 
 class ReactionsDB:
     def __init__(self):
-        self._rastadb = 'rastabot.db'
+        global path
+        self._rastadb = path + 'rastabot.db'
         self.table = 'reactions'
         self.separator = '||'
 
@@ -293,7 +304,8 @@ class ReactionsDB:
 
 class SoundsDB:
     def __init__(self):
-        self._rastadb = 'rastabot.db'
+        global path
+        self._rastadb = path + 'rastabot.db'
         self.table = 'sounds'
         self.dab_cooldown_length = int(get_value(self._rastadb, self.table, 'dab_cooldown_length'))
         self.dab_text_channel_id = int(get_value(self._rastadb, self.table, 'dab_text_channel_id', get_dev = True))
@@ -312,7 +324,8 @@ class SoundsDB:
 
 class DealCatcherDB:
     def __init__(self):
-        self._rastadb = 'dealcatcher.db'
+        global path
+        self._rastadb = path + 'dealcatcher.db'
         self.table = 'deals'
         self.expired_table = 'deals_expired'
         self.new_table = 'deals_new'
@@ -389,4 +402,3 @@ wordfilter_db = WordFilterDB()
 podcast_db = PodcastDB()
 reactions_db = ReactionsDB()
 sounds_db = SoundsDB()
-welcome_db.add_member(789678673392304180)

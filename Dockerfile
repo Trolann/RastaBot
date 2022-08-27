@@ -2,7 +2,8 @@ FROM python:3.9-alpine
 
 ENV DISCORD_TOKEN=environ['DISCORD_TOKEN'] \
     DEV_INSTANCE=0 \
-    IRIE_GUILD_ID=environ['IRIE_GUILD_ID']
+    IRIE_GUILD_ID=environ['IRIE_GUILD_ID'] \
+    PATH='/home/rastabot/'
 
 RUN mkdir -p /home/rastabot
 RUN pip install discord
