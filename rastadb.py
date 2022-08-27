@@ -112,7 +112,7 @@ def select_from_table(db, table, option, get_dev = False):
 
 class ConfigDB:
     def __init__(self):
-        self._rastadb = 'rastabot.db'
+        self._rastadb = '/home/rastabot/rastabot.db'
         self.table = 'config'
         self.tester_table = 'testers'
         self.request_prefix = get_value(self._rastadb, self.table, 'request_prefix')
