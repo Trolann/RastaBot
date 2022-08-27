@@ -12,7 +12,7 @@ except KeyError:
 
 global path
 try:
-    path = environ['PATH']
+    path = environ['DIR_PATH']
 except KeyError:
     path = ''
 
