@@ -83,6 +83,8 @@ def get_value(db, table, option, get_dev = False):
     if dev_instance and get_dev:
         option = 'dev_' + option
 
+    print(option)
+
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
     if dev_instance and get_dev:
