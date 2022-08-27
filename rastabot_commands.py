@@ -1,6 +1,6 @@
 from time import sleep
 
-from rastadb import config_db, welcome_db, wordfilter_db
+from rastadb import config_db, wordfilter_db
 from os import system as os_system
 from discord import Activity, ActivityType
 from welcome_messages import new_message
@@ -26,7 +26,7 @@ async def process_command(client, irie_guild, message, member, channel):
 		await channel.send(reply)
 	# TODO: Change to embed
 	if message.content.startswith('{}list_welcome_messages'.format(COMMAND_PREFIX)):
-		messages = welcome_db.get_messages()
+		messages = config_db.get_messages()
 		i = 0
 		for message in messages:
 			i += 1

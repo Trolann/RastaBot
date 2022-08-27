@@ -1,22 +1,35 @@
-import os
 import sqlite3
 from time import sleep
 from os import environ
+
 global dev_instance
+global path
+
 try:
     dev_instance = bool(int(environ['DEV_INSTANCE']))
-    print('got from environ {}'.format(dev_instance))
+    if dev_instance:
+        print('-' * 35)
+        print('DEVELOPMENT INSTANCE   ' * 3)
+        print('-' * 35)
+    else:
+        print('-' * 35)
+        print('**PROD' * 10 + '**')
+        print('**PROD' * 10 + '**')
+        print('**PROD' * 10 + '**')
+        print('-' * 35)
 except KeyError:
-    print('sure didnt')
+    print('-' * 35)
+    print('DEVELOPMENT INSTANCE   ' * 3)
+    print('-' * 35)
     dev_instance = True
 
-global path
 try:
     path = environ['DIR_PATH']
-    print(path)
+    print('RastaBot DB path: {}'.format(path))
 except KeyError:
     path = ''
-    print('no path')
+    print('RastaBot DB path: local'.format(path))
+
 
 def remove(db, table, option, get_dev = False, commit_to_db=True):
     global dev_instance
@@ -58,6 +71,15 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
     cursor.close()
 
 
+def _insert(cursor, sql):
+    try:
+        cursor.execute(sql)
+    except sqlite3.OperationalError:
+        sleep(2)
+        print('recur')
+        _insert(cursor, sql)
+
+
 def insert(db, table, option, value, get_dev = False, commit_to_db = True):
     global dev_instance
     if dev_instance and get_dev:
@@ -66,15 +88,15 @@ def insert(db, table, option, value, get_dev = False, commit_to_db = True):
     cursor = connection.cursor()
     to_insert = (option, value)
     sql = 'INSERT OR REPLACE INTO {} VALUES {}'.format(table, to_insert)
-    try:
-        cursor.execute(sql)
-    except sqlite3.OperationalError:
-        sleep(1)
-        cursor.execute(sql)
+    _insert(cursor, sql)
     if commit_to_db:
         connection.commit()
+    if dev_instance:
+        print('Value inserted into {} option {}: {}'.format(table, option, value))
     cursor.close()
     connection.close()
+
+
 
 
 def get_value(db, table, option, get_dev = False):
@@ -82,8 +104,6 @@ def get_value(db, table, option, get_dev = False):
 
     if dev_instance and get_dev:
         option = 'dev_' + option
-
-    print(option)
 
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
@@ -95,7 +115,10 @@ def get_value(db, table, option, get_dev = False):
     rows = cursor.fetchall()
     cursor.close()
     connection.close()
-    return rows[0][0] if rows else 0
+    return_val = rows[0][0] if rows else 0
+    if dev_instance:
+        print('Get value result for {}: {}'.format(option, return_val))
+    return return_val
 
 
 def select_from_table(db, table, option, get_dev = False):
@@ -117,6 +140,8 @@ def select_from_table(db, table, option, get_dev = False):
         values.append(_value[0])
     cursor.close()
     connection.close()
+    if dev_instance:
+        print('Get table length of {}: {}'.format(option, len(values)))
     return values
 
 
@@ -139,6 +164,14 @@ class ConfigDB:
         self.tester_channel_id = int(get_value(self._rastadb, self.table, 'tester_channel_id', get_dev = True))
 
         self.about = get_value(self._rastadb, self.table, 'about', get_dev = True)
+        self.welcome_table = 'welcome_messages'
+
+    def get_messages(self):
+        return select_from_table(self._rastadb, self.welcome_table, 'welcome_message', get_dev=True)
+
+    def new_message(self, new_message):
+        item = 'welcome_message'
+        insert(self._rastadb, self.welcome_table, item, new_message, get_dev=True)
 
     def get_heartbeat(self, value):
         value = 'heartbeat_' + value
@@ -186,40 +219,6 @@ class ConfigDB:
     def get_count(self, counter):
         item = counter + '_count'
         return int(get_value(self._rastadb, self.table, item, get_dev = True))
-
-
-class WelcomeDB:
-    def __init__(self):
-        global path
-        self._rastadb = path + 'welcomed_members.db'
-        self.table = 'welcome_messages'
-        self.members_table = 'welcomed_members'
-
-    def get_messages(self):
-        return select_from_table(self._rastadb, self.table, 'welcome_message', get_dev = True)
-
-    def welcomed_list(self, member_id):
-        return select_from_table(self._rastadb, self.table, member_id, get_dev = True)
-        
-    def new_message(self, new_message):
-        item = 'welcome_message'
-        insert(self._rastadb, self.table, item, new_message, get_dev = True)
-
-    def add_member(self, member):
-        item, option = ('member_id', member)
-        insert(self._rastadb, self.members_table, item, option, get_dev = True)
-
-    def clear_welcomed_members(self):
-        option = 'dev_member_id' if dev_instance else 'member_id'
-        conn = sqlite3.connect(self._rastadb)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM {} WHERE option = '{}'".format(self.members_table, option))
-        insert(self.members_table, option, 1234)
-        insert(self.members_table, option, 5678)
-        conn.commit()
-        cursor.close()
-        conn.close()
-
 
 class PodcastDB:
     def __init__(self):
@@ -402,7 +401,6 @@ class DealCatcherDB:
 
 config_db = ConfigDB()
 dealcatcher_db = DealCatcherDB()
-welcome_db = WelcomeDB()
 wordfilter_db = WordFilterDB()
 podcast_db = PodcastDB()
 reactions_db = ReactionsDB()
