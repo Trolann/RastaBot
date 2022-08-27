@@ -13,8 +13,10 @@ except KeyError:
 global path
 try:
     path = environ['DIR_PATH']
+    print(path)
 except KeyError:
     path = ''
+    print('no path')
 
 def remove(db, table, option, get_dev = False, commit_to_db=True):
     global dev_instance
