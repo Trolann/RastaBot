@@ -332,6 +332,7 @@ class DealCatcherDB:
         self.expired_table = 'deals_expired'
         self.new_table = 'deals_new'
         self.separator = '||'
+        self.dir_path = path
         self.dc_daemon_delay_minutes = int(get_value(self._rastadb, self.table, 'dc_daemon_delay_minutes', get_dev = True))
         self.iriedirect_channel_id = int(get_value(self._rastadb, self.table, 'i_direct_channel_id', get_dev = True))
 

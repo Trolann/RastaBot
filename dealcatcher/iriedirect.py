@@ -97,8 +97,8 @@ class IrieDirectDeal:
         ftype = url.split('/')[-1].lower()
         ftype = ftype[:ftype.find('?')]
         myfile = get_image(url)
-        open(f'images/{ftype}', 'wb').write(myfile.content)
-        return 'images/{}'.format(ftype)
+        open('{}images/{}'.format(dealcatcher_db.dir_path, ftype), 'wb').write(myfile.content)
+        return '{}images/{}'.format(dealcatcher_db.dir_path, ftype)
 
     def check_stock(self):
         if "out-of-stock" in self.product_html:
