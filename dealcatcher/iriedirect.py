@@ -11,7 +11,7 @@ from discord import Embed, File, HTTPException
 # Basic counter
 from count import iriedirect as count_iriedirect
 
-website = 'https://www.iriegenetics.com/irie-direct/'
+website = 'https://iriedirect.com/irie-direct/'
 page_str = 'page/{}'
 item_start_str = 'product type-product'  # Generates an item's start_index in Deal object
 acronym = 'iriedirect'
@@ -60,13 +60,9 @@ class IrieDirectDeal:
         return hash(str(self))
 
     def get_name(self, website_html, start_index):
-        link_index = website_html.find('<h3><a href=\"https://www.iriegenetics.com/product/', start_index)
-        item = "\">"
+        item = "<h3><a href=\"" + self.url + "\">"
         terminal = "</a></h3>"
-        name = website_html[website_html.find(item, link_index) + len(item): website_html.find(terminal,
-                                                                                               website_html.find(item,
-                                                                                                                 link_index) + len(
-                                                                                                   item))]
+        name = website_html[website_html.find(item, start_index) + len(item): website_html.find(terminal, website_html.find(item, start_index) + len(item))]
         if name.startswith("Saka"):
             if 'twin-pack' not in self.url:
                 name = "Saka Soufflé"
@@ -184,7 +180,7 @@ def iriedirect_daemon(sleep_time):
 
     old_deals = list()
 
-    first_run = True  # False = will populate deals table with all values
+    first_run = False  # False = will populate deals table with all values
 
     while True:
         old_deals, new_deals, expired_deals = process_deals(old_deals)
@@ -209,7 +205,9 @@ def iriedirect_daemon(sleep_time):
 async def iriedirect_check_for_drop(irie_guild):
     new_deals_list = dealcatcher_db.get_deals(acronym, new_table)
     if new_deals_list:
-        irie_direct_channel = irie_guild.get_channel(dealcatcher_db.iriedirect_channel_id)
+        print(dealcatcher_db.iriedirect_channel_id)
+        irie_direct_channel = irie_guild.get_channel(int(dealcatcher_db.iriedirect_channel_id))
+        print(irie_direct_channel)
         for name, url, image_url, amount, in_stock, description in new_deals_list:
             embed = Embed(color=0xfd0808, title=name, url=url, description="On sale for ${}".format(round(float(amount))))
             file = File(image_url, filename="image.png")

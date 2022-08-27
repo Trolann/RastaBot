@@ -5,12 +5,11 @@ from os import environ
 global dev_instance
 try:
     dev_instance = bool(int(environ['DEV_INSTANCE']))
-    print('got from environ')
+    print('got from environ {}'.format(dev_instance))
 except KeyError:
     print('sure didnt')
     dev_instance = True
 
-dev_instance = False
 def remove(db, table, option, get_dev = False, commit_to_db=True):
     global dev_instance
     if dev_instance and get_dev:
