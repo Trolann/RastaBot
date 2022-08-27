@@ -180,7 +180,7 @@ def iriedirect_daemon(sleep_time):
 
     old_deals = list()
 
-    first_run = False  # False = will populate deals table with all values
+    first_run = True  # False = will populate deals table with all values
 
     while True:
         old_deals, new_deals, expired_deals = process_deals(old_deals)

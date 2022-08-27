@@ -135,8 +135,6 @@ async def on_message(message):  # On every message
 	await podcast_auto_status(client, irie_guild)
 	await iriedirect_check_for_drop(irie_guild)
 	await tester_process_incoming_message(irie_guild, message)
-	if member:
-		await welcome_member(irie_guild, member)
 
 	#  You can't filter bad_words from commands and be able to add/remove bad_words with commands
 	if not member:
