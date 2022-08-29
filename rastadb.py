@@ -31,6 +31,16 @@ except KeyError:
     print('RastaBot DB path: local'.format(path))
 
 
+def _db_recur(cursor, sql, called_from, recur_depth = 0):
+    try:
+        cursor.execute(sql)
+    except sqlite3.OperationalError:
+        sleep(1)
+        recur_depth += 1
+        print('Recur DB called for {}. Depth: {}'.format(called_from, recur_depth))
+        _db_recur(cursor, sql, called_from, recur_depth = recur_depth)
+
+
 def remove(db, table, option, get_dev = False, commit_to_db=True):
     global dev_instance
     if dev_instance and get_dev:
@@ -41,11 +51,7 @@ def remove(db, table, option, get_dev = False, commit_to_db=True):
         sql = "DELETE FROM {} WHERE option = '{}'".format(table, option)
     else:
         sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\'".format(table, option)
-    try:
-        cursor.execute(sql)
-    except sqlite3.OperationalError:
-        sleep(1)
-        cursor.execute(sql)
+    _db_recur(cursor, sql, 'remove')
     if commit_to_db:
         connection.commit()
     cursor.close()
@@ -61,42 +67,34 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
         sql = "DELETE FROM {} WHERE option = '{}' AND value LIKE '%{}%'".format(table, option_like, value_like)
     else:
         sql = "DELETE FROM {} WHERE option = '{}' AND option NOT LIKE \'dev_%\' AND value LIKE '%{}%'".format(table, option_like, value_like)
-    try:
-        cursor.execute(sql)
-    except sqlite3.OperationalError:
-        sleep(1)
-        cursor.execute(sql)
+    _db_recur(cursor, sql, 'remove_like')
     if commit_to_db:
         connection.commit()
     cursor.close()
 
-
-def _insert(cursor, sql):
-    try:
-        cursor.execute(sql)
-    except sqlite3.OperationalError:
-        sleep(2)
-        print('recur')
-        _insert(cursor, sql)
 
 
 def insert(db, table, option, value, get_dev = False, commit_to_db = True):
+    '''Inserts into sqlite db with the option:value schema
+        Recursively calls _insert wrapper to avoid collisions/locked db'''
     global dev_instance
+
     if dev_instance and get_dev:
         option = 'dev_' + option
+
     connection = sqlite3.connect(db)
     cursor = connection.cursor()
-    to_insert = (option, value)
+    to_insert = (option, value)  # Tuple insertion avoids injections
     sql = 'INSERT OR REPLACE INTO {} VALUES {}'.format(table, to_insert)
-    _insert(cursor, sql)
+    _db_recur(cursor, sql, 'insert')  # Wrapper for recursion
+
     if commit_to_db:
         connection.commit()
-    if dev_instance:
-        print('Value inserted into {} option {}: {}'.format(table, option, value))
+
+    # if dev_instance:
+    #     print('Value inserted into {} option {}: {}'.format(table, option, value))
     cursor.close()
     connection.close()
-
-
 
 
 def get_value(db, table, option, get_dev = False):
@@ -111,7 +109,7 @@ def get_value(db, table, option, get_dev = False):
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
     else:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'%dev_%\''.format(table, option)
-    cursor.execute(sql)
+    _db_recur(cursor, sql, 'get_value')
     rows = cursor.fetchall()
     cursor.close()
     connection.close()
@@ -133,21 +131,22 @@ def select_from_table(db, table, option, get_dev = False):
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\''.format(table, option)
     else:
         sql = 'SELECT value FROM {} WHERE option LIKE \'%{}%\' AND option NOT LIKE \'dev_%\''.format(table, option)
-    cursor.execute(sql)
+    _db_recur(cursor, sql, 'select_from_table')
     rows = cursor.fetchall()
     values = []
     for _value in rows:
         values.append(_value[0])
     cursor.close()
     connection.close()
-    if dev_instance:
-        print('Get table length of {}: {}'.format(option, len(values)))
+    if dev_instance and 'After' in values:
+        print('Get table length of {}: {}'.format(option, values))
     return values
 
 
 class ConfigDB:
     def __init__(self):
         global path
+        self.environ_path = path
         self._rastadb = path + 'rastabot.db'
         self.table = 'config'
         self.tester_table = 'testers'

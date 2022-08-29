@@ -7,7 +7,8 @@ from discord import FFmpegPCMAudio, PCMVolumeTransformer
 
 REQUEST_PREFIX = config_db.request_prefix
 global vc
-
+global path
+path = config_db.environ_path
 
 async def check_dab_timer(channel = None):
 
@@ -56,7 +57,7 @@ async def start_dab_timer(channel = None):
 
 
 async def dab_request(irie_guild, message):
-	global vc	
+	global vc
 	# confirm {}dab is available
 	if message.channel.id != sounds_db.dab_text_channel_id:
 		text_channel = irie_guild.get_channel(sounds_db.dab_text_channel_id)
@@ -93,10 +94,15 @@ async def dab_request(irie_guild, message):
 	# connect to the channel
 	print('Connecting to {}...'.format(voice_channel.name))
 	await message.channel.send('Alright {} on my way.'.format(message.author.mention))
+	time = 0
+	while vc.average_latency == 'inf' and time < 10:
+		time += 1
+		sleep(1)
+
 	print('Connected to {} with latency of {}'.format(voice_channel.name, vc.average_latency))
 
 	try:
-		vc.play(FFmpegPCMAudio('dabtime.mp3'))
+		vc.play(FFmpegPCMAudio('{}dabtime.mp3'.format(config_db.environ_path)))
 		print('Playing dabtime.mp3 with latency of {}'.format(vc.average_latency))
 		vc.source = PCMVolumeTransformer(vc.source, volume=0.35)
 		while vc.is_playing():
@@ -106,7 +112,8 @@ async def dab_request(irie_guild, message):
 		await vc.disconnect()
 		await start_dab_timer()
 		return
-	except:
+	except Exception as e:
+		print(e)
 		await vc.disconnect()
 		await start_dab_timer()
 		return

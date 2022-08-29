@@ -7,8 +7,22 @@ import random
 from requests import get
 from discord import Embed
 
+
 REQUEST_PREFIX = config_db.request_prefix
 
+
+# TODO: Breakout dealcatcher (and dealcatcher_db) into its own container, see what changes to rastabot are needed (common volume/db folder likely)
+# TODO: Dealcatcher interface, google sheets integration
+# TODO: load deals on startup then only insert based on local variables -> ConfigDB (rastabot.config)
+# TODO: When inserting new deals, change a variable rastabot checks before pulling data
+# TODO: Initial DB setup scripts for RastaBot and DealCatcher
+# TODO: RastaBot and Dealcatcher will need to share a single DB each in 4 separate containers
+# TODO: RB: images -> media, media: dabtime.mp3, bot_images, deal_images (common volume with dealcatcher)
+# TODO: DC: images: vendor_a, vendor_b
+# TODO: DC: purge deal images on startup
+# TODO: DC: Monitoring
+# TODO: RB: more IrieDirect deals
+# TODO: RB: cached string searches (search with what may be cached)
 
 def get_site(url):
     user_agent_list = (
