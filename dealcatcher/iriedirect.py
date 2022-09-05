@@ -1,6 +1,7 @@
 # For not hammering requests
 from time import sleep
 from rastadb import dealcatcher_db
+from pathlib import Path
 
 # For requests (needed for ssl)
 from dealcatcher.utils import get_site, get_pages, get_image
@@ -63,11 +64,8 @@ class IrieDirectDeal:
         item = "<h3><a href=\"" + self.url + "\">"
         terminal = "</a></h3>"
         name = website_html[website_html.find(item, start_index) + len(item): website_html.find(terminal, website_html.find(item, start_index) + len(item))]
-        if name.startswith("Saka"):
-            if 'twin-pack' not in self.url:
-                name = "Saka Soufflé"
-            else:
-                name = "Saka Soufflé and The Machine TWIN PACK!"
+        name = name.replace('&#8217;', '\'')
+        name = name.replace('\\xc3\\xa9', 'é')
         return name
 
     def get_url(self, website_html, start_index):
@@ -96,8 +94,9 @@ class IrieDirectDeal:
         url = website_html[website_html.find(item, start_index) + len(item): website_html.find(terminal, website_html.find(item, start_index) + len(item))]
         ftype = url.split('/')[-1].lower()
         ftype = ftype[:ftype.find('?')]
-        myfile = get_image(url)
-        open('{}images/{}'.format(dealcatcher_db.dir_path, ftype), 'wb').write(myfile.content)
+        if not Path(f'{dealcatcher_db.dir_path}/{ftype}').is_file():
+            myfile = get_image(url)
+            open('{}images/{}'.format(dealcatcher_db.dir_path, ftype), 'wb').write(myfile.content)
         return '{}images/{}'.format(dealcatcher_db.dir_path, ftype)
 
     def check_stock(self):
