@@ -1,21 +1,11 @@
-from rastadb import config_db, dealcatcher_db
+from rastadb import config_db
 import os
 from time import sleep
 
 # DealCatcher/Irie Genetics daemons
 from threading import Thread
-import dealcatcher.iriedirect as iriedirect
-import dealcatcher.shnirie as shnirie
-import dealcatcher.dwcairie as dwcairie
-import dealcatcher.ctsirie as ctsirie
-import dealcatcher.hsbirie as hsbirie
-import dealcatcher.efsirie as efsirie
-import dealcatcher.hysirie as hysirie
-import dealcatcher.mggirie as mggirie
-import dealcatcher.ssbirie as ssbirie
-import dealcatcher.lbsirie as lbsirie
-import dealcatcher.dssirie as dssirie
 from dealcatcher.utils import get_site as get_site
+from dealcatcher.iriedirect import iriedirect_drop_daemon
 
 REQUEST_PREFIX = config_db.request_prefix  # Prefix for users to interact with bot
 COMMAND_PREFIX = config_db.command_prefix  # Prefix for managers to command the bot
@@ -53,37 +43,12 @@ async def get_about(member, channel):
             await channel.send(about_msg[i])
     return
 
-def start_seed_daemons():
-
-    iriedirect_daemon = Thread(target=iriedirect.iriedirect_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    shn_daemon = Thread(target=shnirie.shn_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    dwca_daemon = Thread(target=dwcairie.dwca_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    cts_daemon = Thread(target=ctsirie.cts_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    hsb_daemon = Thread(target=hsbirie.hsb_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    efs_daemon = Thread(target=efsirie.efs_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    hys_daemon = Thread(target=hysirie.hys_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    mgg_daemon = Thread(target=mggirie.mgg_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    ssb_daemon = Thread(target=ssbirie.ssb_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    lbs_daemon = Thread(target=lbsirie.lbs_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    dss_daemon = Thread(target=dssirie.dss_daemon, args=(dealcatcher_db.dc_daemon_delay_minutes,), daemon=True)
-    iriedirect_daemon.start()
-    shn_daemon.start()
-    dwca_daemon.start()
-    cts_daemon.start()
-    hsb_daemon.start()
-    efs_daemon.start()
-    hys_daemon.start()
-    mgg_daemon.start()
-    ssb_daemon.start()
-    lbs_daemon.start()
-    dss_daemon.start()
-
 
 def start_daemons():
     heartbeat = Thread(target=heartbeat_daemon, args=(10, True,), daemon=True)
     heartbeat.start()
-    start_seed_daemons()
-
+    iriedirect = Thread(target=iriedirect_drop_daemon, daemon=True)
+    iriedirect.start()
 
 def check_bot_manager(member, bot_manager_role):
     bot_manager = False
