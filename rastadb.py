@@ -1,6 +1,9 @@
 import sqlite3
 from time import sleep
 from os import environ
+from random import uniform
+from pathlib import Path
+from shutil import copy2 as copyfile
 
 global dev_instance
 global path
@@ -24,21 +27,37 @@ except KeyError:
     dev_instance = True
 
 try:
-    path = environ['DIR_PATH']
+    path = environ['DB_DIR']
     print('RastaBot DB path: {}'.format(path))
 except KeyError:
     path = ''
     print('RastaBot DB path: local'.format(path))
 
+shared_rasta_db = Path(f"{environ['DB_DIR']}rastabot.db")
+copyfile(f"{environ['DIR_PATH']}dabtime.mp3", environ['DB_DIR'])
+
+if not shared_rasta_db.is_file():
+    try:
+
+        copyfile(f"{environ['DIR_PATH']}rastabot.db", environ['DB_DIR'])
+        print('copied file')
+    except:
+        print('Using local rastabot.db')
 
 def _db_recur(cursor, sql, called_from, recur_depth = 0):
     try:
         cursor.execute(sql)
-    except sqlite3.OperationalError:
-        sleep(1)
-        recur_depth += 1
-        print('Recur DB called for {}. Depth: {}'.format(called_from, recur_depth))
-        _db_recur(cursor, sql, called_from, recur_depth = recur_depth)
+    except sqlite3.OperationalError as e:
+        if recur_depth <= 5:
+            sleep(uniform(0.5, 4.5))
+            recur_depth += 1
+            print('Recur DB called for {}. Depth: {}'.format(called_from, recur_depth))
+            _db_recur(cursor, sql, called_from, recur_depth = recur_depth)
+        else:
+            print('recur failed. SQL NOT EXECUTED:')
+            print(f'{sql}')
+            print(f'called from: {called_from}')
+            print(e)
 
 
 def remove(db, table, option, get_dev = False, commit_to_db=True):
@@ -71,7 +90,6 @@ def remove_like_value(db, table, option_like, value_like, get_dev = False,  comm
     if commit_to_db:
         connection.commit()
     cursor.close()
-
 
 
 def insert(db, table, option, value, get_dev = False, commit_to_db = True):
@@ -161,6 +179,7 @@ class ConfigDB:
 
         self.bot_channel_id = int(get_value(self._rastadb, self.table, 'bot_channel_id', get_dev = True))
         self.tester_channel_id = int(get_value(self._rastadb, self.table, 'tester_channel_id', get_dev = True))
+        self.irie_direct_channel_id = int(get_value(self._rastadb, self.table, 'irie_direct_channel_id', get_dev=True))
 
         self.about = get_value(self._rastadb, self.table, 'about', get_dev = True)
         self.welcome_table = 'welcome_messages'
@@ -324,82 +343,7 @@ class SoundsDB:
         insert(self._rastadb, self.table, 'dab_timer_expires', 0, get_dev = True)
 
 
-class DealCatcherDB:
-    def __init__(self):
-        global path
-        self._rastadb = path + 'dealcatcher.db'
-        self.table = 'deals'
-        self.expired_table = 'deals_expired'
-        self.new_table = 'deals_new'
-        self.separator = '||'
-        self.dir_path = path
-        self.dc_daemon_delay_minutes = int(get_value(self._rastadb, self.table, 'dc_daemon_delay_minutes', get_dev = True))
-        self.iriedirect_channel_id = int(get_value(self._rastadb, self.table, 'i_direct_channel_id', get_dev = True))
-
-    def get_vendors(self):
-        vendor_list = list(select_from_table(self._rastadb, self.table, 'vendor'))
-
-        vendor_dict = dict()
-        for vendor in vendor_list:
-            vendor_split = vendor.split(self.separator)
-            vendor_dict[vendor_split[0]] = (vendor_split[1], vendor_split[2], vendor_split[3])
-            #           vendor_acronym           vendor_name       vendor_website  vendor_thumbnail
-        return vendor_dict
-
-    def new_deal(self, vendor_acronym, deal_tuple, first_run = False):
-        # If we're adding a deal, it has to be new. On the first run tho, don't put it in the new drops section.
-        deal_str = self.separator.join(str(v) for v in deal_tuple)
-        insert(self._rastadb, self.table, vendor_acronym, deal_str)  # Insert the permanent record
-
-        if not first_run:
-            insert(self._rastadb, self.new_table, vendor_acronym, deal_str)  # Add the expired or new record
-            return
-
-    # TODO: MAKE EXPIRED DEALS REMOVE THE PERMANENT RECORD
-    def expired_deal(self, vendor_acronym, deal_tuple):
-        deal_url = deal_tuple[1]
-        remove_like_value(self._rastadb, self.table, vendor_acronym, deal_url)
-        deal_str = self.separator.join(str(v) for v in deal_tuple)
-        insert(self._rastadb, self.expired_table, vendor_acronym, deal_str)
-
-    def clear_deals(self, table):
-        for vendor in self.get_vendors():
-            if table == self.expired_table:
-                remove(self._rastadb, self.expired_table, vendor)
-            if table == self.new_table:
-                remove(self._rastadb, self.new_table, vendor)
-
-    def get_deals(self, vendor_acronym = None, table = 'deals', search_term = None):
-        if table != self.table:
-            rows = list()
-            for vendor_acronym in self.get_vendors():
-                values = select_from_table(self._rastadb, table, vendor_acronym)
-                for value in values:  # If this vendor has something to add, add it
-                    rows.append(value)
-
-        elif vendor_acronym:  # This is a call to show all deals for this vendor
-            rows = select_from_table(self._rastadb, table, vendor_acronym)
-
-        else:  # This is a search request, return every deal in existence
-            rows = list()
-            for vendor in self.get_vendors():
-                rows.append(select_from_table(self._rastadb, table, vendor))
-
-        return_list = list()
-        for row in rows:
-            row_split = row.split(self.separator)
-            tup = (row_split[0], row_split[1], row_split[2], row_split[3], row_split[4], row_split[5].replace(r'\n', '\n'))
-            #           name          url       image_url      amount         in_stock    description
-            if search_term and search_term in tup[0]:
-                return_list.append(tup)
-            if not search_term:
-                return_list.append(tup)
-
-        return return_list
-
-
 config_db = ConfigDB()
-dealcatcher_db = DealCatcherDB()
 wordfilter_db = WordFilterDB()
 podcast_db = PodcastDB()
 reactions_db = ReactionsDB()

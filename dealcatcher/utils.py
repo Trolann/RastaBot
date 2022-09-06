@@ -1,10 +1,11 @@
 import discord.errors
 
-from rastadb import config_db, dealcatcher_db
+from rastadb import config_db
+from irie_seeds import dealcatcher_db
 import certifi
 import urllib3
 import random
-from requests import get
+from requests import get, ConnectionError
 from discord import Embed
 
 
@@ -23,6 +24,13 @@ REQUEST_PREFIX = config_db.request_prefix
 # TODO: DC: Monitoring
 # TODO: RB: more IrieDirect deals
 # TODO: RB: cached string searches (search with what may be cached)
+
+def _get_site(http, url):
+    try:
+        return http.request('GET', url)
+    except Exception as e:
+        _get_site(http, url)
+
 
 def get_site(url):
     user_agent_list = (
@@ -58,7 +66,8 @@ def get_site(url):
         ca_certs=certifi.where(),
         headers={'User-Agent': user_agent, "Accept-Language": "en-US, en;q=0.5"}
     )
-    page = http.request('GET', url)
+    page = _get_site(http, url)
+
     return str(page._body)
 
 
@@ -72,7 +81,10 @@ def get_pages(html, page_str):
 
 
 def get_image(url):
-    return get(url)
+    try:
+        return get(url)
+    except ConnectionError:
+        return get('https://www.dudesworld.ca/wp-content/uploads/2021/06/logo-irie-genetics.png')
 
 
 async def seed_vendor_request(message, channel):
@@ -82,21 +94,29 @@ async def seed_vendor_request(message, channel):
     vendors = dealcatcher_db.get_vendors()
     if len(message.content) > 7:
 
-        vendor_acronym = message.content[7:]
-        vendor_acronym = vendor_acronym.lower()
+        requested_vendor = message.content[7:]
+        requested_vendor = requested_vendor.lower()
+        vendor_found = False
+        vendor_acronym = vendor_name = vendor_website = vendor_thumbnail = ''
 
-        if vendor_acronym not in vendors:
-            await channel.send('{} not found in seed vendors. Try $seeds'.format(vendor_acronym))
+        for _vendor_acronym, _vendor_name, _vendor_website, _vendor_thumbnail in vendors:
+            if _vendor_acronym == requested_vendor:
+                vendor_found = True
+                vendor_acronym = _vendor_acronym
+                vendor_name = _vendor_name
+                vendor_website = _vendor_website
+                vendor_thumbnail = _vendor_thumbnail
+
+        if not vendor_found:
+            await channel.send('{} not found in seed vendors. Try $seeds'.format(requested_vendor))
             return
-
-        vendor_name, vendor_website, vendor_thumbnail = vendors[vendor_acronym]
 
         embed = Embed(title="{} - In Stock".format(vendor_name), url=vendor_website, description="Current list of inventory at {}".format(vendor_name), color=0xff0000)
         embed.set_author(name="{} Current Inventory".format(vendor_name), url=vendor_website)
         embed.set_thumbnail(url=vendor_thumbnail)
         deal_list = dealcatcher_db.get_deals(vendor_acronym)
         for deal in deal_list:
-            name, url, image_url, amount, in_stock, description = deal
+            vendor, name, url, image_url, amount, in_stock, description = deal
             embed.add_field(name="• {}".format(name), value='[Buy here for ${}]({})'.format(round(float(amount)), url), inline=True)
         try:
             await channel.send(embed=embed)
@@ -105,14 +125,13 @@ async def seed_vendor_request(message, channel):
         return
     else:
         embed = Embed(title="Irie Genetics Seed List", description="A list of all Irie Genetics seeds RastaBot currently knows about. This doesn't include every vendor and may not perfectly match actual inventories. \n Use {}seeds as shown to see an individual menu and get the URL directly to the vendor.".format(REQUEST_PREFIX))
-        for vendor_acronym in vendors:
-            vendor_name, vendor_website, vendor_thumbnail = vendors[vendor_acronym]
+        for vendor_acronym, vendor_name, vendor_website, vendor_thumbnail in vendors:
             deal_list = dealcatcher_db.get_deals(vendor_acronym)
             if deal_list:
                 strain_count = 0
                 low_price = float('inf')
 
-                for name, url, image_url, amount, in_stock, description in deal_list:
+                for vendor, name, url, image_url, amount, in_stock, description in deal_list:
                     if float(amount) < float(low_price):
                         low_price = float(amount)
                     strain_count += 1
@@ -139,13 +158,11 @@ async def strain_request(message, channel):
     vendors = dealcatcher_db.get_vendors()
     found = False
 
-    for vendor in vendors:
+    for vendor_acronym, vendor_name, vendor_website, vendor_thumbnail in vendors:
+        deal_list = dealcatcher_db.get_deals(vendor_acronym)
         vendor_found = False
         deal_string = ''
-        deal_list = dealcatcher_db.get_deals(vendor)
-        vendor_found = False
-        deal_string = ''
-        for name, url, image_url, amount, in_stock, description in deal_list:
+        for _vendor_acronym, name, url, image_url, amount, in_stock, description in deal_list:
             if search_term in name.lower():
                 vendor_found = True
                 deal_string += '[{} (${})]({}), '.format(name, round(float(amount)), url)
@@ -158,9 +175,8 @@ async def strain_request(message, channel):
             temp = list(deal_string)
             temp[last_comma] = ' and'
             deal_string = "".join(temp)
-        vendor_name, vendor_website, vendor_thumbnail = vendors[vendor]
-        embed.add_field(name="{} ({}seeds {})".format(vendor_name, REQUEST_PREFIX, vendor), value=deal_string,
-                        inline=False)
+
+        embed.add_field(name="{} ({}seeds {})".format(vendor_name, REQUEST_PREFIX, vendor_acronym), value=deal_string, inline=False)
 
     if not found:
         await channel.send(
