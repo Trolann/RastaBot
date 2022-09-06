@@ -34,6 +34,7 @@ except KeyError:
     print('RastaBot DB path: local'.format(path))
 
 shared_rasta_db = Path(f"{environ['DB_DIR']}rastabot.db")
+copyfile(f"{environ['DIR_PATH']}dabtime.mp3", environ['DB_DIR'])
 
 if not shared_rasta_db.is_file():
     try:

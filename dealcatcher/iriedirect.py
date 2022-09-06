@@ -95,8 +95,6 @@ def iriedirect_drop_daemon():
 async def iriedirect_check_for_drop(irie_guild):
     global new_deals_list
     global expired_deals_list
-    print(f'length of new_deals_list {len(new_deals_list)}')
-    print(f'length of expired_deals_list {len(expired_deals_list)}')
 
     if new_deals_list:
         _new_deals_list = new_deals_list
@@ -104,6 +102,8 @@ async def iriedirect_check_for_drop(irie_guild):
         irie_direct_channel = irie_guild.get_channel(int(config_db.irie_direct_channel_id))
 
         for name, url, image_url, amount, in_stock, description in _new_deals_list:
+            name = name.replace('&#8217;', '\'')
+            name = name.replace('\\xc3\\xa9', 'é')
             embed = Embed(color=0xfd0808, title=name, url=url, description="On sale for ${}".format(round(float(amount))))
             file = File(get_image_url(image_url), filename="image.png")
             embed.set_image(url="attachment://{}".format(get_image_url(image_url)))
@@ -120,6 +120,8 @@ async def iriedirect_check_for_drop(irie_guild):
         expired_deals_list = list()
         irie_direct_channel = irie_guild.get_channel(config_db.irie_direct_channel_id)
         for name, url, image_url, amount, in_stock, description in _expired_deals_list:
+            name = name.replace('&#8217;', '\'')
+            name = name.replace('\\xc3\\xa9', 'é')
             embed = Embed(title=name, url=url,
                           description="IS NOW SOLD OUT! Follow this channel for notifications on the next drop".format(
                               amount))
@@ -140,6 +142,8 @@ async def irie_direct_request(irie_guild, message, channel):
     if 'list' in message.content:
         deal_string = ''
         for name, url, image_url, amount, in_stock, description in deal_list:
+            name = name.replace('&#8217;', '\'')
+            name = name.replace('\\xc3\\xa9', 'é')
             deal_string += '{} (${}), '.format(name, round(float(amount)))
         deal_string = deal_string[:-2]
         last_comma = deal_string.rfind(',')
@@ -165,6 +169,8 @@ async def irie_direct_request(irie_guild, message, channel):
     i = 0
     for deal in deal_list:
         vendor, name, url, image_url, amount, in_stock, description = deal
+        name = name.replace('&#8217;', '\'')
+        name = name.replace('\\xc3\\xa9', 'é')
         if i < 24:
             embed.add_field(name="• {}".format(name), value='[Buy here for ${}]({})'.format(round(float(amount)), url),
                             inline=True)
