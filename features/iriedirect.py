@@ -1,18 +1,19 @@
 # For not hammering requests
 from time import sleep
 from rastadb import config_db
-from irie_seeds import dealcatcher_db, rastadeals_db
+from features.irie_seeds import dealcatcher_db, rastadeals_db
 global new_deals_list
 global expired_deals_list
+from pathlib import Path
 
 # For requests (needed for ssl)
-from dealcatcher.utils import get_site, get_pages, get_image
+from features.utils import get_image
 
 # For IrieDirect drop alerts
 from discord import Embed, File, HTTPException
 
 # Basic counter
-from count import iriedirect as count_iriedirect
+from features.count import iriedirect as count_iriedirect
 
 website = 'https://iriedirect.com/irie-direct/'
 page_str = 'page/{}'
@@ -26,24 +27,24 @@ thumbnail = 'https://www.dudesworld.ca/wp-content/uploads/2021/06/logo-irie-gene
 def get_image_url(url):
     ftype = url.split('/')[-1].lower()
     ftype = ftype[:ftype.find('?')]
-    myfile = get_image(url)
-    open('{}images/{}'.format(config_db.environ_path, ftype), 'wb').write(myfile.content)
-    return '{}images/{}'.format(config_db.environ_path, ftype)
+    full_path = f'{dealcatcher_db.images_path}/{ftype}'
+    if not Path(full_path).is_file():
+        myfile = get_image(url)
+        open(full_path, 'wb').write(myfile.content)
+    return full_path
 
 
 def iriedirect_drop_daemon():
     print('drop daemon started')
-    simmer = 0
+
     global new_deals_list
     global expired_deals_list
     new_deals_list = list()  # New deals as compared between last known RastaBot deals and most recent known DealCatcher deals
     expired_deals_list = list()  # Same thing as above but different
 
-
     _expired_double_check = list()  # Used to only remove expired deals if they have been expired for 2 checks
 
     while True:
-
         internal_deals = rastadeals_db.get_deals(acronym)
         internal_deals_list = list()
         # Generate tuples for every deal object
@@ -65,6 +66,7 @@ def iriedirect_drop_daemon():
                 if current_url == internal_url:
                     deal_internal = True
                     continue
+
             if not deal_internal:
                 print(f'ADDED: {current_name}')
                 new_deals_list.append(current_deal)
@@ -107,7 +109,7 @@ async def iriedirect_check_for_drop(irie_guild):
             embed = Embed(color=0xfd0808, title=name, url=url, description="On sale for ${}".format(round(float(amount))))
             file = File(get_image_url(image_url), filename="image.png")
             embed.set_image(url="attachment://{}".format(get_image_url(image_url)))
-            embed.add_field(name="Description:", value=str(description), inline=False)
+            embed.add_field(name="Description:", value=str(description.replace(r'\n', '\n')), inline=False)
             try:
                 await irie_direct_channel.send(embed=embed, file=file)
             except HTTPException as e:

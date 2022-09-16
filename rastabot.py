@@ -4,8 +4,8 @@ from time import sleep
 
 # DealCatcher/Irie Genetics daemons
 from threading import Thread
-from dealcatcher.utils import get_site as get_site
-from dealcatcher.iriedirect import iriedirect_drop_daemon
+from features.utils import get_site as get_site
+from features.iriedirect import iriedirect_drop_daemon
 
 REQUEST_PREFIX = config_db.request_prefix  # Prefix for users to interact with bot
 COMMAND_PREFIX = config_db.command_prefix  # Prefix for managers to command the bot

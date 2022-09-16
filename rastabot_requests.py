@@ -1,9 +1,9 @@
 from rastadb import config_db
 from rastabot import get_about as rastabot_get_about
-from tester import tester_request
-from dealcatcher.utils import seed_vendor_request, strain_request
-from dealcatcher.iriedirect import irie_direct_request
-from sounds import dab_request
+from features.tester import tester_request
+from features.utils import seed_vendor_request, strain_request
+from features.iriedirect import irie_direct_request
+from features.sounds import dab_request
 
 
 REQUEST_PREFIX = config_db.request_prefix

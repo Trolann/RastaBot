@@ -4,19 +4,19 @@ RastaBot developed by Trolan (Trevor Mathisen).
 # Core requirements
 from rastadb import config_db
 import discord
-import count
+from features import count
 from os import environ as os_environ
 from rastabot import process_incoming_message, start_daemons, check_bot_manager, heartbeat_daemon
-from bad_words import check as check_bad_words
-from welcome_messages import welcome_member
+from features.bad_words import check as check_bad_words
+from features.welcome_messages import welcome_member
 from rastabot_requests import process_request
 from rastabot_commands import process_command
-from podcast import auto_status as podcast_auto_status
-from tester import process_incoming_message as tester_process_incoming_message
-from reactions import add as add_reaction
-from reactions import remove as remove_reaction
-from dealcatcher.iriedirect import iriedirect_check_for_drop
-from dealcatcher.utils import get_site
+from features.podcast import auto_status as podcast_auto_status
+from features.tester import process_incoming_message as tester_process_incoming_message
+from features.reactions import add as add_reaction
+from features.reactions import remove as remove_reaction
+from features.iriedirect import iriedirect_check_for_drop
+from features.utils import get_site
 global irie_guild
 
 # Configuration variables requested for the rest of the program

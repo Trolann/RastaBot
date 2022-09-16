@@ -1,7 +1,7 @@
 import discord.errors
 
 from rastadb import config_db
-from irie_seeds import dealcatcher_db
+from features.irie_seeds import dealcatcher_db
 import certifi
 import urllib3
 import random

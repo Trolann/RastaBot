@@ -34,7 +34,7 @@ except KeyError:
     print('RastaBot DB path: local'.format(path))
 
 shared_rasta_db = Path(f"{environ['DB_DIR']}rastabot.db")
-copyfile(f"{environ['DIR_PATH']}dabtime.mp3", environ['DB_DIR'])
+copyfile(f"{environ['DIR_PATH']}media/dabtime.mp3", environ['DB_DIR'])
 
 if not shared_rasta_db.is_file():
     try:
@@ -168,6 +168,7 @@ class ConfigDB:
         self._rastadb = path + 'rastabot.db'
         self.table = 'config'
         self.tester_table = 'testers'
+        self.welcome_table = 'welcome_messages'
         self.request_prefix = get_value(self._rastadb, self.table, 'request_prefix')
         self.command_prefix = get_value(self._rastadb, self.table, 'command_prefix')
         self.bot_manager_id = int(get_value(self._rastadb, self.table, 'bot_manager_id', get_dev = True))
@@ -182,7 +183,7 @@ class ConfigDB:
         self.irie_direct_channel_id = int(get_value(self._rastadb, self.table, 'irie_direct_channel_id', get_dev=True))
 
         self.about = get_value(self._rastadb, self.table, 'about', get_dev = True)
-        self.welcome_table = 'welcome_messages'
+
 
     def get_messages(self):
         return select_from_table(self._rastadb, self.welcome_table, 'welcome_message', get_dev=True)

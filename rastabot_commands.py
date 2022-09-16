@@ -2,13 +2,11 @@ from time import sleep
 
 from rastadb import config_db, wordfilter_db
 from os import system as os_system
-from discord import Activity, ActivityType
-from welcome_messages import new_message
-from bad_words import list_bad_words
-from reactions import new_reaction_message, delete_reaction_message, new_role_reaction, delete_role_reaction, list_reactions
-from podcast import check_new as podcast_check_new
-from tester import clear_testers
-from sounds import check_dab_timer, start_dab_timer, clear_dab_timer
+from features.welcome_messages import new_message
+from features.bad_words import list_bad_words
+from features.reactions import new_reaction_message, delete_reaction_message, new_role_reaction, delete_role_reaction, list_reactions
+from features.tester import clear_testers
+from features.sounds import check_dab_timer, start_dab_timer, clear_dab_timer
 
 
 COMMAND_PREFIX = config_db.command_prefix

@@ -95,6 +95,7 @@ class RastaDealsDB:
 class DealCatcherDB:
     def __init__(self):
         self._dealcatcherdb = path + 'dealcatcher.db'
+        self.images_path = path + 'images/'
         self.vendors_table = 'vendors'
         self.active_table = 'active_deals'
 
