@@ -34,7 +34,6 @@ except KeyError:
     print('RastaBot DB path: local'.format(path))
 
 shared_rasta_db = Path(f"{environ['DB_DIR']}rastabot.db")
-copyfile(f"{environ['DIR_PATH']}media/dabtime.mp3", environ['DB_DIR'])
 
 if not shared_rasta_db.is_file():
     try:
@@ -324,28 +323,7 @@ class ReactionsDB:
         remove_like_value(self._rastadb, self.table, message_id, emoji)
 
 
-class SoundsDB:
-    def __init__(self):
-        global path
-        self._rastadb = path + 'rastabot.db'
-        self.table = 'sounds'
-        self.dab_cooldown_length = int(get_value(self._rastadb, self.table, 'dab_cooldown_length'))
-        self.dab_text_channel_id = int(get_value(self._rastadb, self.table, 'dab_text_channel_id', get_dev = True))
-        self.dab_voice_channel_id = int(get_value(self._rastadb, self.table, 'dab_voice_channel_id', get_dev = True))
-        self.dab_delay_seconds = int(get_value(self._rastadb, self.table, 'dab_delay_seconds', get_dev = True))
-
-    def check_dab_timer(self):
-        return int(round(float(get_value(self._rastadb, self.table, 'dab_timer_expires', get_dev = True))))
-
-    def start_dab_timer(self, time):
-        insert(self._rastadb, self.table, 'dab_timer_expires', time, get_dev = True)
-
-    def clear_dab_timer(self):
-        insert(self._rastadb, self.table, 'dab_timer_expires', 0, get_dev = True)
-
-
 config_db = ConfigDB()
 wordfilter_db = WordFilterDB()
 podcast_db = PodcastDB()
 reactions_db = ReactionsDB()
-sounds_db = SoundsDB()

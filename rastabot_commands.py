@@ -6,7 +6,6 @@ from features.welcome_messages import new_message
 from features.bad_words import list_bad_words
 from features.reactions import new_reaction_message, delete_reaction_message, new_role_reaction, delete_role_reaction, list_reactions
 from features.tester import clear_testers
-from features.sounds import check_dab_timer, start_dab_timer, clear_dab_timer
 
 
 COMMAND_PREFIX = config_db.command_prefix
@@ -89,9 +88,3 @@ async def process_command(client, irie_guild, message, member, channel):
 		config_db.update_tester_message(tester_message)
 		await channel.send('Tester message updated to: {}'.format(tester_message))
 
-	if message.content.startswith('{}check_dab_timer'.format(COMMAND_PREFIX)):
-		await check_dab_timer(channel)
-	if message.content.startswith('{}start_dab_timer'.format(COMMAND_PREFIX)):
-		await start_dab_timer(channel)
-	if message.content.startswith('{}clear_dab_timer'.format(COMMAND_PREFIX)):
-		await clear_dab_timer(channel)
